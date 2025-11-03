@@ -23,8 +23,8 @@ def load_data():
     EDGES_URL = "https://drive.google.com/file/d/1wUs1KWGMM2VBHLKUFYIinIUq-kHqIJv5/view?usp=drive_link"
     NODES_URL = "https://drive.google.com/file/d/1H1dneXLu56nAyAeICMr41lhcgGYcC8Qd/view?usp=drive_link"
 
-    edges = pd.read_csv(EDGES_URL)
-    nodes = pd.read_csv(NODES_URL)
+    edges = pd.read_csv(EDGES_URL,  on_bad_lines='warn')
+    nodes = pd.read_csv(NODES_URL,  on_bad_lines='warn')
     return nodes, edges
 
 def create_graph(nodes, edges):
