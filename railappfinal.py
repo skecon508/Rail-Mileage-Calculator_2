@@ -190,3 +190,7 @@ if st.sidebar.button("Compute Paths"):
             st.error("No base path found between selected nodes.")
     else:
         st.warning("Please enter both start and end nodes.")
+
+# ✅ Display map if stored in session
+if "map" in st.session_state:
+    st_folium(st.session_state["map"], width=1200, height=700)
