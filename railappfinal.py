@@ -129,7 +129,7 @@ if st.sidebar.button("Compute Paths"):
     if start_node and end_node:
         # --- Create working copy of graph ---
         G_temp = G.copy()
-
+        
         # --- Apply allowed owner filter ---
         if allowed_owner != "All":
             edges_to_remove = []
@@ -146,10 +146,17 @@ if st.sidebar.button("Compute Paths"):
             G_temp.remove_edges_from(edges_to_remove)
 
         # --- Remove avoided nodes ---
+        G_div = G_temp.copy()
         if avoid_nodes:
             avoid_list = [int(n.strip()) for n in avoid_nodes.split(",") if n.strip().isdigit()]
-            G_temp.remove_nodes_from(avoid_list)
-
+            G_div.remove_nodes_from(avoid_list)
+        # --- Compute diversion path ---
+            diversion_path, diversion_distance = None, None
+            try:
+                    diversion_path = nx.shortest_path(G_div, start_node, end_node, weight="weight")
+                    diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
+            except nx.NetworkXNoPath:
+                    diversion_path, diversion_distance = None, None
         # --- Compute base path ---
         try:
             base_path = nx.shortest_path(G_temp, start_node, end_node, weight="weight")
@@ -157,20 +164,7 @@ if st.sidebar.button("Compute Paths"):
         except nx.NetworkXNoPath:
             st.error("No base path found for the selected owner or nodes.")
             base_path, base_distance = None, None
-
-        # --- Compute diversion path ---
-        diversion_path, diversion_distance = None, None
-        if base_path and len(base_path) > 2:
-            G_div = G_temp.copy()
-            i = len(base_path) // 2
-            u, v = base_path[i - 1], base_path[i]
-            if G_div.has_edge(u, v):
-                G_div.remove_edge(u, v)
-                try:
-                    diversion_path = nx.shortest_path(G_div, start_node, end_node, weight="weight")
-                    diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
-                except nx.NetworkXNoPath:
-                    diversion_path, diversion_distance = None, None
+            
                     
         # --- Display distances ---
         st.subheader("📏 Path Distances")
