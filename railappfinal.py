@@ -183,7 +183,7 @@ if st.sidebar.button("Compute Paths"):
             
         #Plotting
         if base_path:
-            m = plot_paths(G, base_path, diversion_path)
+            m = plot_paths(_G, base_path, diversion_path)
             if m:
                 st_folium(m, width=1200, height=700)
         else:
