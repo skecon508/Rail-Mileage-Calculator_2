@@ -72,7 +72,7 @@ G = create_or_load_graph(nodes, edges)
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
 
 @st.cache_resource
-def plot_paths(G, base_path, diversion_path):
+def plot_paths(_G, base_path, diversion_path):
     """Plot base and diversion paths on a Folium map"""
     if not base_path:
         st.error("No base path found.")
@@ -183,7 +183,7 @@ if st.sidebar.button("Compute Paths"):
             
         #Plotting
         if base_path:
-            m = plot_paths(_G, base_path, diversion_path)
+            m = plot_paths(G, base_path, diversion_path)
             if m:
                 st_folium(m, width=1200, height=700)
         else:
