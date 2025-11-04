@@ -172,6 +172,7 @@ if st.sidebar.button("Compute Paths"):
                 diversion_path, diversion_distance = None, None
                     
         # --- Display metrics if base path found ---
+        base_path, base_distance = None, None
         if base_path:
             # --- Compute cost/time metrics ---
             base_time = base_distance / base_speed
