@@ -17,25 +17,24 @@ from zipfile import ZipFile
 st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 
 # Define data paths
-@st.cache_data
-def load_data():
-    """Load edges and nodes from local data folder"""
+@st.cache_resource
+def create_or_load_graph(nodes, edges):
+    """Create or load a cached NetworkX graph"""
     DATA_DIR = pathlib.Path(__file__).parent / "data"
-    EDGES_PATH = DATA_DIR / "Edges.csv.gz"
-    NODES_PATH = DATA_DIR / "Nodes.csv.gz"
+    GRAPH_PATH = DATA_DIR / "graph.gpickle"
 
-    edges = pd.read_csv(EDGES_PATH, compression='gzip')
-    nodes = pd.read_csv(NODES_PATH, compression='gzip')
-    return nodes, edges
+    # ✅ If the graph already exists, load it directly
+    if GRAPH_PATH.exists():
+        st.info("Loading cached graph from disk...")
+        G = nx.read_gpickle(GRAPH_PATH)
+        return G
 
-
-def create_graph(nodes, edges):
-    # Create graph
-    
+    # ✅ Otherwise, build it from CSVs and save
+    st.warning("Graph not found on disk — building new graph (this may take a few minutes)...")
     G = nx.Graph()
     for _, row in nodes.iterrows():
         G.add_node(str(row["FRANODEID"]), state=row.get("STATE", ""), pos=(row["x"], row["y"]))
-    
+
     for _, row in edges.iterrows():
         ownership = row.get("TRKRGHTS1")
         if pd.isna(ownership):
@@ -43,15 +42,17 @@ def create_graph(nodes, edges):
         else:
             ownership = str(ownership).strip()
         G.add_edge(str(row["FRFRANODE"]), str(row["TOFRANODE"]), weight=row.get("MILES", 1), ownership=ownership)
+
+    # ✅ Save prebuilt graph for faster future loads
+    nx.write_gpickle(G, GRAPH_PATH)
+    st.success(f"Graph cached at {GRAPH_PATH}")
     return G
 
 
-
-
-# --- Load once and cache ---
+# --- Load data and graph ---
 nodes, edges = load_data()
+G = create_or_load_graph(nodes, edges)
 
-G = create_graph(nodes, edges)
 
 #Collect the track rights owners together
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
