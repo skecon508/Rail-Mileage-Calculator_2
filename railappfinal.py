@@ -28,6 +28,7 @@ def load_data():
     nodes = pd.read_csv(NODES_PATH, compression='gzip')
     return nodes, edges
 
+
 def create_graph(nodes, edges):
     # Create graph
     
@@ -55,7 +56,7 @@ G = create_graph(nodes, edges)
 #Collect the track rights owners together
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
 
-
+@st.cache_resource
 def plot_paths(G, base_path, diversion_path):
     """Plot base and diversion paths on a Folium map"""
     if not base_path:
