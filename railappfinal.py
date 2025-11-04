@@ -12,6 +12,7 @@ import networkx as nx
 import folium
 from streamlit_folium import st_folium
 import pathlib
+from zipfile import ZipFile
 
 st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 
@@ -20,8 +21,8 @@ st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 def load_data():
     """Load edges and nodes from local data folder"""
     
-    edges = pd.read_csv("Edges.csv.zip", compression='zip')
-    nodes = pd.read_csv("Nodes.csv.zip", compression='zip')
+    edges = pd.read_csv(zip_file.open("Edges.csv.zip"))
+    nodes = pd.read_csv(zip_file.open("Nodes.csv.zip"))
     return nodes, edges
 
 def create_graph(nodes, edges):
