@@ -184,7 +184,7 @@ if st.sidebar.button("Compute Paths"):
         #Plotting
         if base_path:
             m = plot_paths(G, base_path, diversion_path)
-            iif m:
+            if m:
                 st.session_state["map"] = m  # ✅ store in session
         else:
             st.error("No base path found between selected nodes.")
