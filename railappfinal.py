@@ -71,7 +71,7 @@ G = create_or_load_graph(nodes, edges)
 #Collect the track rights owners together
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
 
-@st.cache_resource
+#@st.cache_resource
 def plot_paths(_G, base_path, diversion_path):
     """Plot base and diversion paths on a Folium map"""
     if not base_path:
