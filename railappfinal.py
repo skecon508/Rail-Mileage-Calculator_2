@@ -20,8 +20,8 @@ st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 def load_data():
     """Load edges and nodes from local data folder"""
     
-    edges = pd.read_csv("Edges.csv.zip", compression='gzip')
-    nodes = pd.read_csv("Nodes.csv.zip", compression='gzip')
+    edges = pd.read_csv("Edges.csv.zip", compression='zip')
+    nodes = pd.read_csv("Nodes.csv.zip", compression='zip')
     return nodes, edges
 
 def create_graph(nodes, edges):
