@@ -20,10 +20,12 @@ st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 @st.cache_data
 def load_data():
     """Load edges and nodes from local data folder"""
-    With ZipFile(/"data") as zf:
-        with zf.open(
-        edges = pd.read_csv(ZipFile.open("Edges.csv.zip", "r"))
-        nodes = pd.read_csv(ZipFile.open("Nodes.csv.zip", "r"))
+    DATA_DIR = pathlib.Path(__file__).parent / "data"
+    EDGES_PATH = DATA_DIR / "Edges.csv.gz"
+    NODES_PATH = DATA_DIR / "Nodes.csv.gz"
+
+    edges = pd.read_csv(EDGES_PATH, compression='gzip')
+    nodes = pd.read_csv(NODES_PATH, compression='gzip')
     return nodes, edges
 
 def create_graph(nodes, edges):
