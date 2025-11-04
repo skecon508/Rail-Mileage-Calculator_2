@@ -129,12 +129,11 @@ if st.sidebar.button("Compute Paths"):
     if start_node and end_node:
         # --- Create working copy of graph ---
         G_temp = G.copy()
-        
+
         # --- Apply allowed owner filter ---
         if allowed_owner != "All":
             edges_to_remove = []
             for u, v, data in G_temp.edges(data=True):
-                # Collect all trackage rights for this edge
                 row = edges[
                     (edges["FRFRANODE"] == u) &
                     (edges["TOFRANODE"] == v)
@@ -145,21 +144,15 @@ if st.sidebar.button("Compute Paths"):
                         edges_to_remove.append((u, v))
             G_temp.remove_edges_from(edges_to_remove)
 
-        # --- Remove avoided nodes ---
-        G_div = G_temp.copy()
-        if avoid_nodes:
-            avoid_list = [int(n.strip()) for n in avoid_nodes.split(",") if n.strip().isdigit()]
-            G_div.remove_nodes_from(avoid_list)
-        
-            # --- Compute base path ---
-            try:
-                base_path = nx.shortest_path(G_temp, start_node, end_node, weight="weight")
-                base_distance = nx.shortest_path_length(G_temp, start_node, end_node, weight="weight")
-            except nx.NetworkXNoPath:
-                st.error("No base path found for the selected owner.")
-                base_path, base_distance = None, None
-                
-        # --- Compute diversion path only if avoided nodes are specified ---
+        # --- Compute base path on full graph (ignore avoided nodes) ---
+        try:
+            base_path = nx.shortest_path(G_temp, start_node, end_node, weight="weight")
+            base_distance = nx.shortest_path_length(G_temp, start_node, end_node, weight="weight")
+        except nx.NetworkXNoPath:
+            st.error("No base path found for the selected owner.")
+            base_path, base_distance = None, None
+
+        # --- Compute diversion path only if avoid nodes provided ---
         diversion_path, diversion_distance = None, None
         if avoid_nodes:
             G_div = G_temp.copy()
@@ -170,21 +163,18 @@ if st.sidebar.button("Compute Paths"):
                 diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
             except nx.NetworkXNoPath:
                 diversion_path, diversion_distance = None, None
-                    
-        # --- Display metrics if base path found ---
-        base_path, base_distance = None, None
+
+        # --- Compute and display results ---
         if base_path:
-            # --- Compute cost/time metrics ---
             base_time = base_distance / base_speed
             base_fuel = base_distance * fuel_cost_per_mile
             base_labor = base_distance * labor_cost_per_mile
 
+            div_time = div_fuel = div_labor = 0
             if diversion_distance:
                 div_time = diversion_distance / div_speed
                 div_fuel = diversion_distance * fuel_cost_per_mile
                 div_labor = diversion_distance * labor_cost_per_mile
-            else:
-                div_time = div_fuel = div_labor = 0
 
             # --- Display results side by side ---
             col1, col2 = st.columns(2)
@@ -215,14 +205,12 @@ if st.sidebar.button("Compute Paths"):
                 else:
                     st.markdown("No valid diversion path found.")
                 st.markdown("</div>", unsafe_allow_html=True)
-        
-        #Plotting
-        if base_path:
+
+            # --- Plot and show map ---
             m = plot_paths(G, base_path, diversion_path)
             if m:
-                st.session_state["map"] = m  # ✅ store in session
-        else:
-            st.error("No base path found between selected nodes.")
+                st.session_state["map"] = m
+
     else:
         st.warning("Please enter both start and end nodes.")
 
