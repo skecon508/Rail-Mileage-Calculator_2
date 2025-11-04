@@ -150,31 +150,71 @@ if st.sidebar.button("Compute Paths"):
         if avoid_nodes:
             avoid_list = [int(n.strip()) for n in avoid_nodes.split(",") if n.strip().isdigit()]
             G_div.remove_nodes_from(avoid_list)
-        # --- Compute diversion path ---
-            diversion_path, diversion_distance = None, None
+        
+            # --- Compute base path ---
             try:
-                    diversion_path = nx.shortest_path(G_div, start_node, end_node, weight="weight")
-                    diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
+                base_path = nx.shortest_path(G_temp, start_node, end_node, weight="weight")
+                base_distance = nx.shortest_path_length(G_temp, start_node, end_node, weight="weight")
             except nx.NetworkXNoPath:
-                    diversion_path, diversion_distance = None, None
-        # --- Compute base path ---
-        try:
-            base_path = nx.shortest_path(G_temp, start_node, end_node, weight="weight")
-            base_distance = nx.shortest_path_length(G_temp, start_node, end_node, weight="weight")
-        except nx.NetworkXNoPath:
-            st.error("No base path found for the selected owner or nodes.")
-            base_path, base_distance = None, None
-            
+                st.error("No base path found for the selected owner.")
+                base_path, base_distance = None, None
+                
+        # --- Compute diversion path only if avoided nodes are specified ---
+        diversion_path, diversion_distance = None, None
+        if avoid_nodes:
+            G_div = G_temp.copy()
+            avoid_list = [n.strip() for n in avoid_nodes if n.strip().isdigit()]
+            G_div.remove_nodes_from(avoid_list)
+            try:
+                diversion_path = nx.shortest_path(G_div, start_node, end_node, weight="weight")
+                diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
+            except nx.NetworkXNoPath:
+                diversion_path, diversion_distance = None, None
                     
-        # --- Display distances ---
-        st.subheader("📏 Path Distances")
-        st.write(f"**Base path distance:** {base_distance:.2f} miles")
-        if diversion_distance:
-            st.write(f"**Diversion path distance:** {diversion_distance:.2f} miles")
-            st.write(f"**Additional distance:** {diversion_distance - base_distance:.2f} miles")
-        else:
-            st.write("No valid diversion path found.")
-            
+        # --- Display metrics if base path found ---
+        if base_path:
+            # --- Compute cost/time metrics ---
+            base_time = base_distance / base_speed
+            base_fuel = base_distance * fuel_cost_per_mile
+            base_labor = base_distance * labor_cost_per_mile
+
+            if diversion_distance:
+                div_time = diversion_distance / div_speed
+                div_fuel = diversion_distance * fuel_cost_per_mile
+                div_labor = diversion_distance * labor_cost_per_mile
+            else:
+                div_time = div_fuel = div_labor = 0
+
+            # --- Display results side by side ---
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("""
+                <div style="border:1px solid black; border-radius:8px; padding:10px;">
+                <h4 style="text-align:center;">Base Path</h4>
+                """, unsafe_allow_html=True)
+                st.markdown(f"**Distance:** {base_distance:.2f} miles")
+                st.markdown(f"**Avg Speed:** {base_speed:.1f} mph")
+                st.markdown(f"**Travel Time:** {base_time:.2f} hours")
+                st.markdown(f"**Fuel Cost:** ${base_fuel:,.2f}")
+                st.markdown(f"**Labor Cost:** ${base_labor:,.2f}")
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            with col2:
+                st.markdown("""
+                <div style="border:1px solid black; border-radius:8px; padding:10px;">
+                <h4 style="text-align:center;">Diversion Path</h4>
+                """, unsafe_allow_html=True)
+                if diversion_distance:
+                    st.markdown(f"**Distance:** {diversion_distance:.2f} miles")
+                    st.markdown(f"**Avg Speed:** {div_speed:.1f} mph")
+                    st.markdown(f"**Travel Time:** {div_time:.2f} hours")
+                    st.markdown(f"**Fuel Cost:** ${div_fuel:,.2f}")
+                    st.markdown(f"**Labor Cost:** ${div_labor:,.2f}")
+                    st.markdown(f"**Δ Distance:** {diversion_distance - base_distance:.2f} miles")
+                else:
+                    st.markdown("No valid diversion path found.")
+                st.markdown("</div>", unsafe_allow_html=True)
+        
         #Plotting
         if base_path:
             m = plot_paths(G, base_path, diversion_path)
