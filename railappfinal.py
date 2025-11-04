@@ -37,7 +37,8 @@ def create_or_load_graph(nodes, edges):
     # ✅ If the graph already exists, load it directly
     if GRAPH_PATH.exists():
         st.info("Loading cached graph from disk...")
-        G = nx.read_gpickle(GRAPH_PATH)
+        with open(GRAPH_PATH, "rb") as f:
+            G = pickle.load(f)
         return G
 
     # ✅ Otherwise, build it from CSVs and save
@@ -55,7 +56,9 @@ def create_or_load_graph(nodes, edges):
         G.add_edge(str(row["FRFRANODE"]), str(row["TOFRANODE"]), weight=row.get("MILES", 1), ownership=ownership)
 
     # ✅ Save prebuilt graph for faster future loads
-    nx.write_gpickle(G, GRAPH_PATH)
+   
+    with open(GRAPH_PATH, "wb") as f:
+        pickle.dump(G, f, protocol=pickle.HIGHEST_PROTOCOL)
     st.success(f"Graph cached at {GRAPH_PATH}")
     return G
 
