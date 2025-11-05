@@ -20,32 +20,35 @@ from openpyxl.drawing.image import Image as XLImage
 #import wkhtmltopdf
 
 st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
-@st.cache_resource
-def get_allowed_edges(edges, allowed_owner, trk_cols):
-    """Return a set of allowed edges for a given railroad owner"""
-    if allowed_owner == "All":
-        return None  # no filtering needed
 
-    # normalize once for reliability
+@st.cache_resource
+def get_allowed_edges(edges, allowed_owners, trk_cols):
+    """Return set of allowed edges for one or more selected owners."""
+    # If "All" selected, skip filtering
+    if "All" in allowed_owners or not allowed_owners:
+        return None
+
+    allowed_owners = [str(o).strip() for o in allowed_owners]
+
     edges = edges.copy()
     edges["FR_str"] = edges["FRFRANODE"].astype(str).str.strip()
     edges["TO_str"] = edges["TOFRANODE"].astype(str).str.strip()
+
     for c in trk_cols:
         edges[c] = edges[c].fillna("").astype(str).str.strip()
 
-    # rows where any TRKRGHTS col matches this owner
-    mask = edges[trk_cols].apply(
-        lambda row: any((str(x).strip() == str(allowed_owner)) for x in row), axis=1
-    )
+    # Row is allowed if ANY trackage rights col matches ANY selected owner
+    mask = edges[trk_cols].apply(lambda row: any(x in allowed_owners for x in row), axis=1)
     subset = edges[mask]
 
-    # build set of (u,v) and (v,u) for undirected matching
     allowed_edges = set()
     for _, r in subset.iterrows():
         u, v = r["FR_str"], r["TO_str"]
         allowed_edges.add((u, v))
-        allowed_edges.add((v, u))
+        allowed_edges.add((v, u))  # undirected edges
+
     return allowed_edges
+
     
 # Define data paths
 @st.cache_data 
@@ -146,6 +149,7 @@ div_speed = st.sidebar.number_input("Diversion Speed (mph)")
 fuel_cost_per_mile =st.sidebar.number_input("Fuel Cost per Mile")
 labor_cost_per_mile=st.sidebar.number_input("Labor Cost per Mile")
 edges_to_remove =[]
+
 # --- Allowed Owner Selection ---
 trk_cols = [f"TRKRGHTS{i}" for i in range(1, 10)]
 unique_owners = pd.unique(edges[trk_cols].values.ravel())
@@ -167,8 +171,11 @@ if st.sidebar.button("Compute Paths"):
         G_temp = G.copy()
 
         # --- Apply allowed owner filter with caching ---
-        if allowed_owner != "All":
-            allowed_edges = get_allowed_edges(edges, allowed_owner, trk_cols)
+        allowed_edges = get_allowed_edges(edges, allowed_owner, trk_cols)
+        if allowed_edges is not None:
+            edges_to_remove = [(u, v) for u, v in G_temp.edges() if (u, v) not in allowed_edges]
+            G_temp.remove_edges_from(edges_to_remove)
+
             if not allowed_edges:
                 st.warning(f"No edges found for owner {allowed_owner}.")
             else:
