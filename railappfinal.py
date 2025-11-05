@@ -13,6 +13,10 @@ import folium
 from streamlit_folium import st_folium
 import pathlib
 import pickle
+import io
+import pandas as pd
+from openpyxl import Workbook
+from openpyxl.drawing.image import Image as XLImage
 
 st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 @st.cache_resource
@@ -184,7 +188,8 @@ if st.sidebar.button("Compute Paths"):
         try:
             base_path = nx.shortest_path(G_temp, start_node, end_node, weight="weight")
             base_distance = nx.shortest_path_length(G_temp, start_node, end_node, weight="weight")
-        
+            st.session_state["base_path"] = base_path
+            
         except nx.NetworkXNoPath:
             st.warning("⚠️ Base path cannot be computed based on ownership restriction.")
             base_path, base_distance = None, None
@@ -206,6 +211,7 @@ if st.sidebar.button("Compute Paths"):
             try:
                 diversion_path = nx.shortest_path(G_div, start_node, end_node, weight="weight")
                 diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
+                st.session_state["diversion_path"] = diversion_path
             except nx.NetworkXNoPath:
                 diversion_path, diversion_distance = None, None
 
@@ -301,3 +307,70 @@ if "results" in st.session_state:
 # --- Display the map persistently ---
 if "map" in st.session_state:
     st_folium(st.session_state["map"], width=1200, height=700)
+
+# --- Export to Excel ---
+if "results" in st.session_state and "map" in st.session_state and st.button("Export Results to Excel"):
+    res = st.session_state["results"]
+    base_path = st.session_state.get("base_path", [])
+    diversion_path = st.session_state.get("diversion_path", [])
+
+    # --- Create Excel workbook in memory ---
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        # 1️⃣ Summary sheet
+        summary_data = {
+            "Path Type": ["Base", "Diversion"],
+            "Distance (miles)": [
+                res["base"]["distance"],
+                res["diversion"]["distance"],
+            ],
+            "Average Speed (mph)": [
+                res["base"]["speed"],
+                res["diversion"]["speed"],
+            ],
+            "Travel Time (hours)": [
+                res["base"]["time"],
+                res["diversion"]["time"],
+            ],
+            "Fuel Cost ($)": [
+                res["base"]["fuel"],
+                res["diversion"]["fuel"],
+            ],
+            "Labor Cost ($)": [
+                res["base"]["labor"],
+                res["diversion"]["labor"],
+            ],
+        }
+        pd.DataFrame(summary_data).to_excel(writer, index=False, sheet_name="Summary")
+
+        # 2️⃣ Paths sheet
+        max_len = max(len(base_path or []), len(diversion_path or []))
+        df_paths = pd.DataFrame({
+            "Base Path Nodes": (base_path or []) + [""] * (max_len - len(base_path or [])),
+            "Diversion Path Nodes": (diversion_path or []) + [""] * (max_len - len(diversion_path or [])),
+        })
+        df_paths.to_excel(writer, index=False, sheet_name="Paths")
+
+        # 3️⃣ Optional — Map image
+        try:
+            m = st.session_state["map"]
+            m.save("temp_map.html")
+            import tempfile, imgkit
+
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_img:
+                imgkit.from_file("temp_map.html", tmp_img.name)
+                ws = writer.book.create_sheet("Map")
+                img = XLImage(tmp_img.name)
+                ws.add_image(img, "A1")
+        except Exception as e:
+            st.warning(f"Map export skipped (wkhtmltopdf/imgkit not installed): {e}")
+
+    output.seek(0)
+
+    # --- Provide download button ---
+    st.download_button(
+        label="📊 Download Excel File",
+        data=output,
+        file_name="RailMileageResults.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
