@@ -101,10 +101,8 @@ def create_or_load_graph(nodes, edges):
 nodes, edges = load_data()
 G = create_or_load_graph(nodes, edges)
 
-
 #Collect the track rights owners together
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
-
 
 def plot_paths(_G, base_path, diversion_path):
     """Plot base and diversion paths on a Folium map"""
@@ -134,7 +132,6 @@ def plot_paths(_G, base_path, diversion_path):
 
 # --- Streamlit UI ---
 st.title("🚆 North American Rail Network Path Mapper")
-
 
 st.success(f"Loaded {len(edges)} edges and {len(nodes)} nodes.")
 
@@ -214,9 +211,9 @@ if st.sidebar.button("Compute Paths"):
         diversion_path, diversion_distance = None, None
         if avoid_nodes:
             G_div = G_temp.copy()
-            avoid_list = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()] 
+            avoid_nodes = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()] 
             #[n.strip() for n in avoid_nodes if n.strip().isdigit()] 
-            G_div.remove_nodes_from(avoid_list)
+            G_div.remove_nodes_from(avoid_nodes)
             try:
                 diversion_path = nx.shortest_path(G_div, start_node, end_node, weight="weight")
                 diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
