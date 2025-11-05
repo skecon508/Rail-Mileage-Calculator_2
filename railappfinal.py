@@ -172,6 +172,12 @@ if st.sidebar.button("Compute Paths"):
                     if (str(u).strip(), str(v).strip()) not in allowed_edges
                 ]
                 G_temp.remove_edges_from(edges_to_remove)
+                st.session_state["allowed_edges"] = allowed_edges
+        else:
+            st.session_state["allowed_edges"] = None
+
+        # Store filtered graph in session state
+        st.session_state["filtered_graph"] = G_temp
                 st.write(f"Ownership filter: removed {len(edges_to_remove)} edges for {allowed_owner}.")
 
         # --- Compute base path on filtered graph ---
@@ -245,6 +251,16 @@ if st.sidebar.button("Compute Paths"):
 
 
 # --- Always display last computed results if they exist ---
+
+if "filtered_graph" in st.session_state:
+    G_temp = st.session_state["filtered_graph"]
+    allowed_edges = st.session_state.get("allowed_edges")
+
+    if allowed_edges is not None:
+        st.info(f"Ownership filter active: {len(allowed_edges)} allowed edges for {allowed_owner}.")
+    else:
+        st.info("No ownership filter applied (All).")
+        
 if "results" in st.session_state:
     res = st.session_state["results"]
     col1, col2 = st.columns(2)
