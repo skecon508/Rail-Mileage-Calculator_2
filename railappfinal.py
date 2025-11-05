@@ -178,7 +178,7 @@ if st.sidebar.button("Compute Paths"):
 
         # Store filtered graph in session state
         st.session_state["filtered_graph"] = G_temp
-            st.write(f"Ownership filter: removed {len(edges_to_remove)} edges for {allowed_owner}.")
+        st.write(f"Ownership filter: removed {len(edges_to_remove)} edges for {allowed_owner}.")
 
         # --- Compute base path on filtered graph ---
         try:
