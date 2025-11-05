@@ -120,12 +120,12 @@ def plot_paths(_G, base_path, diversion_path):
 
     # Base path (blue)
     base_coords = [node_coords(n) for n in base_path if node_coords(n)]
-    folium.PolyLine(base_coords, color="blue", weight=5, tooltip="Base Path").add_to(m)
+    folium.PolyLine(base_coords, color="blue", weight=2, tooltip="Base Path").add_to(m)
 
     # Diversion path (red)
     if diversion_path:
         div_coords = [node_coords(n) for n in diversion_path if node_coords(n)]
-        folium.PolyLine(div_coords, color="red", weight=4, tooltip="Diversion Path").add_to(m)
+        folium.PolyLine(div_coords, color="red", weight=2, tooltip="Diversion Path").add_to(m)
 
     return m
 
