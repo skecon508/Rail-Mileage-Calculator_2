@@ -8,4 +8,4 @@ scipy
 numpy
 pathlib
 openpyxl
-
+wkhtmltopdf
