@@ -242,6 +242,8 @@ if st.sidebar.button("Compute Paths"):
                             "time": base_time,
                             "fuel": base_fuel,
                             "labor": base_labor,
+                            "start node": start_node,
+                            "end node": end_node,
                         },
                         "diversion": {
                             "distance": diversion_distance,
@@ -249,6 +251,8 @@ if st.sidebar.button("Compute Paths"):
                             "time": div_time,
                             "fuel": div_fuel,
                             "labor": div_labor,
+                            "start node": start_node,
+                            "end node": end_node,
                         },
                     }
                     st.session_state["map"] = m
