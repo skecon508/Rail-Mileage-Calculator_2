@@ -110,6 +110,10 @@ start_node = st.sidebar.text_input("Start Node (6-digit ID)", "")
 end_node = st.sidebar.text_input("End Node (6-digit ID)", "")
 avoid_nodes_input = st.sidebar.text_input("Nodes to avoid (comma-separated 6-digit IDs)", "")
 avoid_nodes = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()]
+base_speed = st.sidebar.number_input("Base Speed (mph)")
+div_speed = st.sidebar.number_input("Diversion Speed (mph)")
+fuel_cost_per_mile =st.sidebar.number_input("Fuel Cost per Mile")
+labor_cost_per_mile=st.sidebar.number_input("Labor Cost per Mile")
 
 # --- Allowed Owner Selection ---
 trk_cols = [f"TRKRGHTS{i}" for i in range(1, 10)]
