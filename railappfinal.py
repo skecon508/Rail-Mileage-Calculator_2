@@ -15,7 +15,33 @@ import pathlib
 import pickle
 
 st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
+@st.cache_resource
+def get_allowed_edges(edges, allowed_owner, trk_cols):
+    """Return a set of allowed edges for a given railroad owner"""
+    if allowed_owner == "All":
+        return None  # no filtering needed
 
+    # normalize once for reliability
+    edges = edges.copy()
+    edges["FR_str"] = edges["FRFRANODE"].astype(str).str.strip()
+    edges["TO_str"] = edges["TOFRANODE"].astype(str).str.strip()
+    for c in trk_cols:
+        edges[c] = edges[c].fillna("").astype(str).str.strip()
+
+    # rows where any TRKRGHTS col matches this owner
+    mask = edges[trk_cols].apply(
+        lambda row: any((str(x).strip() == str(allowed_owner)) for x in row), axis=1
+    )
+    subset = edges[mask]
+
+    # build set of (u,v) and (v,u) for undirected matching
+    allowed_edges = set()
+    for _, r in subset.iterrows():
+        u, v = r["FR_str"], r["TO_str"]
+        allowed_edges.add((u, v))
+        allowed_edges.add((v, u))
+    return allowed_edges
+    
 # Define data paths
 @st.cache_data 
 def load_data(): 
@@ -135,50 +161,18 @@ if st.sidebar.button("Compute Paths"):
         # --- Create working copy of graph ---
         G_temp = G.copy()
 
-        # --- Apply allowed owner filter (robust and fast) ---
+        # --- Apply allowed owner filter with caching ---
         if allowed_owner != "All":
-            # normalize the edge key columns to strings once (do this once outside or cached ideally)
-            # create columns FR_str and TO_str with consistent string IDs for reliable matching
-            edges = edges.copy()  # work with a copy to be safe
-            edges["FR_str"] = edges["FRFRANODE"].astype(str).str.strip()
-            edges["TO_str"] = edges["TOFRANODE"].astype(str).str.strip()
-        
-            # ensure all TRKRGHTS columns exist and normalize them to str
-            trk_cols = [c for c in edges.columns if c.upper().startswith("TRKRGHTS") or "RGHTS" in c.upper() or "TRK" in c.upper()]
-            trk_cols = [c for c in trk_cols if c in edges.columns]  # filter existing ones
-            if not trk_cols:
-                st.warning("No trackage rights columns detected; owner filter ignored.")
+            allowed_edges = get_allowed_edges(edges, allowed_owner, trk_cols)
+            if not allowed_edges:
+                st.warning(f"No edges found for owner {allowed_owner}.")
             else:
-                # normalize trackage rights into string values (fast vectorized op)
-                for c in trk_cols:
-                    edges[c] = edges[c].fillna("").astype(str).str.strip()
-        
-                # Build set of allowed edge tuples for this owner (use directed pairs as stored in CSV)
-                allowed_edges = set()
-                # rows where ANY trk col equals the selected owner
-                mask = edges[trk_cols].apply(lambda row: any((str(x).strip() == str(allowed_owner)) for x in row), axis=1)
-                subset = edges[mask]
-        
-                # populate allowed_edges set (check both orientations to handle undirected graph)
-                for _, r in subset.iterrows():
-                    u = r["FR_str"]
-                    v = r["TO_str"]
-                    allowed_edges.add((u, v))
-                    allowed_edges.add((v, u))  # allow reverse orientation if graph is undirected
-        
-                # Now remove edges from G_temp that are not in allowed_edges
-                edges_to_remove = []
-                for u, v in list(G_temp.edges()):
-                    # ensure we compare strings
-                    u_s = str(u).strip()
-                    v_s = str(v).strip()
-                    if (u_s, v_s) not in allowed_edges:
-                        edges_to_remove.append((u, v))
+                edges_to_remove = [
+                    (u, v) for u, v in list(G_temp.edges())
+                    if (str(u).strip(), str(v).strip()) not in allowed_edges
+                ]
                 G_temp.remove_edges_from(edges_to_remove)
-        
-                # debug info for user
-                removed_count = len(edges_to_remove)
-                st.write(f"Ownership filter: removed {removed_count} edges not permitted for {allowed_owner}.")
+                st.write(f"Ownership filter: removed {len(edges_to_remove)} edges for {allowed_owner}.")
 
         # --- Compute base path on filtered graph ---
         try:
