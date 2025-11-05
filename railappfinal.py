@@ -16,7 +16,7 @@ import pickle
 import io
 import pandas as pd
 from openpyxl import Workbook
-from openpyxl.drawing.image import Image as XLImage
+#from openpyxl.drawing.image import Image as XLImage
 #import wkhtmltopdf
 
 st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
