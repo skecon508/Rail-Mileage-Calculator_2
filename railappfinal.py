@@ -291,7 +291,13 @@ if "results" in st.session_state:
         else:
             st.markdown("No valid diversion path found.")
         st.markdown("</div>", unsafe_allow_html=True)
-
+    # --- Add a Clear Results button ---
+    st.markdown("---")
+    if st.button("🧹 Clear Results"):
+        for key in ["results", "map"]:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.experimental_rerun()
 # --- Display the map persistently ---
 if "map" in st.session_state:
     st_folium(st.session_state["map"], width=1200, height=700)
