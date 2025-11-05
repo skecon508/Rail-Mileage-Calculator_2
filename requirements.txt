@@ -7,4 +7,6 @@ streamlit-folium
 scipy
 numpy
 pathlib
+io
+openpyxl
 
