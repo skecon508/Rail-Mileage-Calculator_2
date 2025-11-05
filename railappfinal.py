@@ -205,7 +205,7 @@ if st.sidebar.button("Compute Paths"):
 
         # --- Compute diversion path only if avoid nodes provided ---
         diversion_path, diversion_distance = None, None
-        if avoid_nodes_:
+        if avoid_nodes:
             G_div = G_temp.copy()
             avoid_list = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()] 
             #[n.strip() for n in avoid_nodes if n.strip().isdigit()] 
