@@ -149,12 +149,21 @@ if st.sidebar.button("Compute Paths"):
                         edges_to_remove.append((u, v))
             G_temp.remove_edges_from(edges_to_remove)
 
-        # --- Compute base path (ignore avoided nodes for this one) ---
+        # --- Compute base path on filtered graph ---
         try:
             base_path = nx.shortest_path(G_temp, start_node, end_node, weight="weight")
             base_distance = nx.shortest_path_length(G_temp, start_node, end_node, weight="weight")
+        
         except nx.NetworkXNoPath:
-            st.error("No base path found for the selected owner.")
+            st.warning("⚠️ Base path cannot be computed based on ownership restriction.")
+            base_path, base_distance = None, None
+        
+        except nx.NodeNotFound as e:
+            st.error(f"❌ Invalid node: {e}. Please check your start and end node IDs.")
+            base_path, base_distance = None, None
+        
+        except Exception as e:
+            st.error(f"Unexpected error computing base path: {e}")
             base_path, base_distance = None, None
 
         # --- Compute diversion path only if avoid nodes provided ---
