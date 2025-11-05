@@ -205,7 +205,7 @@ if m:
         }
     st.session_state["map"] = m
 
-    # --- Always display last computed results if they exist ---
+# --- Always display last computed results if they exist ---
 if "results" in st.session_state:
     res = st.session_state["results"]
     col1, col2 = st.columns(2)
@@ -237,6 +237,6 @@ if "results" in st.session_state:
             st.markdown("No valid diversion path found.")
         st.markdown("</div>", unsafe_allow_html=True)
 
+# --- Display the map persistently ---
 if "map" in st.session_state:
     st_folium(st.session_state["map"], width=1200, height=700)
-
