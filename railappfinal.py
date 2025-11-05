@@ -211,9 +211,9 @@ if st.sidebar.button("Compute Paths"):
         diversion_path, diversion_distance = None, None
         if avoid_nodes:
             G_div = G_temp.copy()
-            avoid_nodes = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()] 
+            avoid_list = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()] 
             #[n.strip() for n in avoid_nodes if n.strip().isdigit()] 
-            G_div.remove_nodes_from(avoid_nodes)
+            G_div.remove_nodes_from(avoid_list)
             try:
                 diversion_path = nx.shortest_path(G_div, start_node, end_node, weight="weight")
                 diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
