@@ -297,7 +297,7 @@ if "results" in st.session_state:
         for key in ["results", "map"]:
             if key in st.session_state:
                 del st.session_state[key]
-        st.experimental_rerun()
+        st.rerun()
 # --- Display the map persistently ---
 if "map" in st.session_state:
     st_folium(st.session_state["map"], width=1200, height=700)
