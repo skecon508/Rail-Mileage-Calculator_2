@@ -170,40 +170,43 @@ if st.sidebar.button("Compute Paths"):
 
         # --- Compute and display results ---
         if base_path:
-            base_time = base_distance / base_speed
-            base_fuel = base_distance * fuel_cost_per_mile
-            base_labor = base_distance * labor_cost_per_mile
+            # Validate speeds
+            if base_speed <= 0 or (avoid_nodes and div_speed <= 0):
+                st.error("Please enter valid (positive) speeds for all paths before computing.")
+            else:
+                base_time = base_distance / base_speed
+                base_fuel = base_distance * fuel_cost_per_mile
+                base_labor = base_distance * labor_cost_per_mile
 
-            div_time = div_fuel = div_labor = 0
-            if diversion_distance:
-                div_time = diversion_distance / div_speed
-                div_fuel = diversion_distance * fuel_cost_per_mile
-                div_labor = diversion_distance * labor_cost_per_mile
+                div_time = div_fuel = div_labor = 0
+                if diversion_distance:
+                    div_time = diversion_distance / div_speed
+                    div_fuel = diversion_distance * fuel_cost_per_mile
+                    div_labor = diversion_distance * labor_cost_per_mile
 
-            
+                # --- Plot and store results ---
+                m = plot_paths(G, base_path, diversion_path)
+                if m:
+                    st.session_state["results"] = {
+                        "base": {
+                            "distance": base_distance,
+                            "speed": base_speed,
+                            "time": base_time,
+                            "fuel": base_fuel,
+                            "labor": base_labor,
+                        },
+                        "diversion": {
+                            "distance": diversion_distance,
+                            "speed": div_speed,
+                            "time": div_time,
+                            "fuel": div_fuel,
+                            "labor": div_labor,
+                        },
+                    }
+                    st.session_state["map"] = m
 
     else:
         st.warning("Please enter both start and end nodes.")
-# --- Plot and show map ---
-m = plot_paths(G, base_path, diversion_path)
-if m:
-    st.session_state["results"] = {
-        "base": {
-            "distance": base_distance,
-            "speed": base_speed,
-            "time": base_time,
-            "fuel": base_fuel,
-            "labor": base_labor,
-            },
-         "diversion": {
-             "distance": diversion_distance,
-             "speed": div_speed,
-             "time": div_time,
-             "fuel": div_fuel,
-             "labor": div_labor,
-            }
-        }
-    st.session_state["map"] = m
 
 # --- Always display last computed results if they exist ---
 if "results" in st.session_state:
