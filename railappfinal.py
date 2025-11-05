@@ -205,14 +205,16 @@ if st.sidebar.button("Compute Paths"):
 
         # --- Compute diversion path only if avoid nodes provided ---
         diversion_path, diversion_distance = None, None
-        if avoid_nodes:
+        if avoid_nodes_:
             G_div = G_temp.copy()
-            avoid_list = [n.strip() for n in avoid_nodes if n.strip().isdigit()]
+            avoid_list = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()] 
+            #[n.strip() for n in avoid_nodes if n.strip().isdigit()] 
             G_div.remove_nodes_from(avoid_list)
             try:
                 diversion_path = nx.shortest_path(G_div, start_node, end_node, weight="weight")
                 diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
                 st.session_state["diversion_path"] = diversion_path
+                st.session_state["diversion_distance"] = diversion_distance
             except nx.NetworkXNoPath:
                 diversion_path, diversion_distance = None, None
 
