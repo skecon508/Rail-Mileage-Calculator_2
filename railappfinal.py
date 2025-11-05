@@ -185,25 +185,25 @@ if st.sidebar.button("Compute Paths"):
     else:
         st.warning("Please enter both start and end nodes.")
 # --- Plot and show map ---
-        m = plot_paths(G, base_path, diversion_path)
-        if m:
-            st.session_state["results"] = {
-                "base": {
-                    "distance": base_distance,
-                    "speed": base_speed,
-                    "time": base_time,
-                    "fuel": base_fuel,
-                    "labor": base_labor,
-                    },
-                "diversion": {
-                    "distance": diversion_distance,
-                    "speed": div_speed,
-                    "time": div_time,
-                    "fuel": div_fuel,
-                    "labor": div_labor,
-                }
+m = plot_paths(G, base_path, diversion_path)
+if m:
+    st.session_state["results"] = {
+        "base": {
+            "distance": base_distance,
+            "speed": base_speed,
+            "time": base_time,
+            "fuel": base_fuel,
+            "labor": base_labor,
+            },
+         "diversion": {
+             "distance": diversion_distance,
+             "speed": div_speed,
+             "time": div_time,
+             "fuel": div_fuel,
+             "labor": div_labor,
             }
-            st.session_state["map"] = m
+        }
+    st.session_state["map"] = m
 
     # --- Always display last computed results if they exist ---
 if "results" in st.session_state:
