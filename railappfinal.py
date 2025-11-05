@@ -163,108 +163,136 @@ allowed_owner = st.sidebar.multiselect("Allowed Owner (Railroad)", ["All"] + uni
 # Compute and plot
 # --- Compute and plot ---
 if st.sidebar.button("Compute Paths"):
-    if start_node and end_node:
-        # --- Create working copy of graph ---
+    if not (start_node and end_node):
+        st.warning("Please enter both start and end nodes.")
+    else:
+        # --- Create working copy of graph (preserve cached G) ---
         G_temp = G.copy()
 
-        # --- Apply allowed owner filter with caching ---
-        allowed_edges = get_allowed_edges(edges, allowed_owner, trk_cols)
+        # --- Apply allowed owner filter (cached via get_allowed_edges) ---
+        allowed_edges = get_allowed_edges(edges, allowed_owner, trk_cols)  # accepts list or "All"
         if allowed_edges is not None:
-            edges_to_remove = [(u, v) for u, v in G_temp.edges() if (u, v) not in allowed_edges]
-            G_temp.remove_edges_from(edges_to_remove)
-
-            if not allowed_edges:
-                st.warning(f"No edges found for owner {allowed_owner}.")
-            else:
-                edges_to_remove = [
-                    (u, v) for u, v in list(G_temp.edges())
-                    if (str(u).strip(), str(v).strip()) not in allowed_edges
-                ]
-                G_temp.remove_edges_from(edges_to_remove)
-                st.session_state["allowed_edges"] = allowed_edges
+            # remove any edge in G_temp that is NOT in allowed_edges
+            removed = []
+            for u, v in list(G_temp.edges()):
+                if (str(u).strip(), str(v).strip()) not in allowed_edges:
+                    removed.append((u, v))
+            if removed:
+                G_temp.remove_edges_from(removed)
+            st.info(f"Ownership filter applied: removed {len(removed)} edges for {allowed_owner}.")
         else:
-            st.session_state["allowed_edges"] = None
+            st.info("No ownership filter applied (All).")
 
-        # Store filtered graph in session state
+        # Save filtered graph to session (for debugging / display)
         st.session_state["filtered_graph"] = G_temp
-        st.write(f"Ownership filter: removed {len(edges_to_remove)} edges for {allowed_owner}.")
+        st.session_state["allowed_edges"] = allowed_edges
 
-        # --- Compute base path on filtered graph ---
+        # --- Compute base path on filtered graph (IGNORE avoid nodes for base) ---
         try:
-            base_path = nx.shortest_path(G_temp, start_node, end_node, weight="weight")
-            base_distance = nx.shortest_path_length(G_temp, start_node, end_node, weight="weight")
+            base_path = nx.shortest_path(G_temp, str(start_node).strip(), str(end_node).strip(), weight="weight")
+            base_distance = nx.shortest_path_length(G_temp, str(start_node).strip(), str(end_node).strip(), weight="weight")
             st.session_state["base_path"] = base_path
-            
-        except nx.NetworkXNoPath:
-            st.warning("⚠️ Base path cannot be computed based on ownership restriction.")
-            base_path, base_distance = None, None
-        
+            st.session_state["base_distance"] = base_distance
         except nx.NodeNotFound as e:
-            st.error(f"❌ Invalid node: {e}. Please check your start and end node IDs.")
-            base_path, base_distance = None, None
-        
+            st.error(f"Invalid start/end node: {e}. Make sure node IDs exist in the network (after owner filter).")
+            base_path = base_distance = None
+        except nx.NetworkXNoPath:
+            st.warning("⚠️ Base path cannot be computed on the filtered network (ownership restriction).")
+            base_path = base_distance = None
         except Exception as e:
             st.error(f"Unexpected error computing base path: {e}")
-            base_path, base_distance = None, None
+            base_path = base_distance = None
 
-        # --- Compute diversion path only if avoid nodes provided ---
-        diversion_path, diversion_distance = None, None
+        # --- Compute diversion path ONLY if user provided avoid nodes ---
+        diversion_path = None
+        diversion_distance = None
         if avoid_nodes:
-            G_div = G_temp.copy()
-            avoid_list = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()] 
-            #[n.strip() for n in avoid_nodes if n.strip().isdigit()] 
-            G_div.remove_nodes_from(avoid_list)
-            try:
-                diversion_path = nx.shortest_path(G_div, start_node, end_node, weight="weight")
-                diversion_distance = nx.shortest_path_length(G_div, start_node, end_node, weight="weight")
-                st.session_state["diversion_path"] = diversion_path
-                st.session_state["diversion_distance"] = diversion_distance
-            except nx.NetworkXNoPath:
-                diversion_path, diversion_distance = None, None
+            # normalize avoid node ids to strings and strip
+            avoid_list = [str(n).strip() for n in avoid_nodes_input.split(",") if str(n).strip()]
+            # check existence in the filtered graph BEFORE removal
+            missing = [n for n in avoid_list if n not in G_temp.nodes()]
+            if missing:
+                st.warning(f"The following avoid-node(s) are not present in the filtered graph and cannot be removed: {missing}")
+                # We continue: we will remove only nodes that exist
+                avoid_list = [n for n in avoid_list if n in G_temp.nodes()]
 
-        # --- Compute and display results ---
-        if base_path:
-            # Validate speeds
-            if base_speed <= 0 or (avoid_nodes and div_speed <= 0):
-                st.error("Please enter valid (positive) speeds for all paths before computing.")
+            if avoid_list:
+                G_div = G_temp.copy()
+                G_div.remove_nodes_from(avoid_list)
+                st.info(f"Removed avoid-nodes from diversion graph: {avoid_list}")
+                # Now attempt shortest path on G_div
+                try:
+                    diversion_path = nx.shortest_path(G_div, str(start_node).strip(), str(end_node).strip(), weight="weight")
+                    diversion_distance = nx.shortest_path_length(G_div, str(start_node).strip(), str(end_node).strip(), weight="weight")
+                    st.session_state["diversion_path"] = diversion_path
+                    st.session_state["diversion_distance"] = diversion_distance
+                except nx.NodeNotFound as e:
+                    st.error(f"Invalid start/end node for diversion: {e}")
+                    diversion_path = diversion_distance = None
+                except nx.NetworkXNoPath:
+                    st.warning("No diversion path found after removing the avoided node(s).")
+                    diversion_path = diversion_distance = None
+                except Exception as e:
+                    st.error(f"Unexpected error computing diversion path: {e}")
+                    diversion_path = diversion_distance = None
             else:
+                # avoid_list ended up empty (no nodes removed)
+                st.info("No avoidable nodes were present in the filtered graph; diversion not computed.")
+                diversion_path = diversion_distance = None
+        else:
+            st.info("No avoid nodes provided; diversion will not be computed.")
+            diversion_path = diversion_distance = None
+
+        # --- Validate speeds before cost/time calculations ---
+        if base_path and (base_speed is None or base_speed <= 0):
+            st.error("Please enter a positive Base Speed (mph) to compute times/costs.")
+        elif avoid_nodes and (diversion_distance is not None) and (div_speed is None or div_speed <= 0):
+            st.error("Please enter a positive Diversion Speed (mph) to compute diversion times/costs.")
+        else:
+            # --- Compute costs & times (if values exist) ---
+            if base_path:
                 base_time = base_distance / base_speed
                 base_fuel = base_distance * fuel_cost_per_mile
                 base_labor = base_distance * labor_cost_per_mile
+            else:
+                base_time = base_fuel = base_labor = 0
 
+            if diversion_distance:
+                div_time = diversion_distance / div_speed
+                div_fuel = diversion_distance * fuel_cost_per_mile
+                div_labor = diversion_distance * labor_cost_per_mile
+            else:
                 div_time = div_fuel = div_labor = 0
-                if diversion_distance:
-                    div_time = diversion_distance / div_speed
-                    div_fuel = diversion_distance * fuel_cost_per_mile
-                    div_labor = diversion_distance * labor_cost_per_mile
 
-                # --- Plot and store results ---
-                m = plot_paths(G, base_path, diversion_path)
-                if m:
-                    st.session_state["results"] = {
-                        "base": {
-                            "distance": base_distance,
-                            "speed": base_speed,
-                            "time": base_time,
-                            "fuel": base_fuel,
-                            "labor": base_labor,
-                            "start node": start_node,
-                            "end node": end_node,
-                        },
-                        "diversion": {
-                            "distance": diversion_distance,
-                            "speed": div_speed,
-                            "time": div_time,
-                            "fuel": div_fuel,
-                            "labor": div_labor,
-                            "start node": start_node,
-                            "end node": end_node,
-                        },
-                    }
-                    st.session_state["map"] = m
+            # --- Build display results and store in session state ---
+            st.session_state["results"] = {
+                "base": {
+                    "distance": base_distance,
+                    "speed": base_speed,
+                    "time": base_time,
+                    "fuel": base_fuel,
+                    "labor": base_labor,
+                    "path": base_path
+                },
+                "diversion": {
+                    "distance": diversion_distance,
+                    "speed": div_speed,
+                    "time": div_time,
+                    "fuel": div_fuel,
+                    "labor": div_labor,
+                    "path": diversion_path
+                },
+            }
 
-    else:
-        st.warning("Please enter both start and end nodes.")
+            # --- Plot map using base/diversion paths we just computed ---
+            # Use the global G only to look up node coordinates (pos attributes)
+            m = plot_paths(G, base_path, diversion_path)
+            if m:
+                st.session_state["map"] = m
+
+        # Debug: show session keys (temporary - remove later)
+        st.debug = getattr(st, "debug", None)
+        st.write("Session state keys:", list(st.session_state.keys()))
 
 
 # --- Always display last computed results if they exist ---
