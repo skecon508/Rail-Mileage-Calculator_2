@@ -147,7 +147,7 @@ unique_owners = pd.unique(edges[trk_cols].values.ravel())
 unique_owners = [o for o in unique_owners if isinstance(o, str) and o.strip()]
 unique_owners.sort()
 
-allowed_owner = st.sidebar.multi_select("Allowed Owner (Railroad)", ["All"] + unique_owners)
+allowed_owner = st.sidebar.multiselect("Allowed Owner (Railroad)", ["All"] + unique_owners)
     
 # Remove avoided nodes
 for node in avoid_nodes:
