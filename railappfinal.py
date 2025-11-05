@@ -17,7 +17,7 @@ import io
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image as XLImage
-sudo apt-get install wkhtmltopdf
+import wkhtmltopdf
 
 st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 @st.cache_resource
