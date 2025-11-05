@@ -155,9 +155,9 @@ unique_owners.sort()
 allowed_owner = st.sidebar.multiselect("Allowed Owner (Railroad)", ["All"] + unique_owners)
     
 # Remove avoided nodes
-for node in avoid_nodes:
-    if node in G:
-        G.remove_node(node)
+#for node in avoid_nodes:
+    #if node in G:
+        #G.remove_node(node)
 
 # Compute and plot
 # --- Compute and plot ---
