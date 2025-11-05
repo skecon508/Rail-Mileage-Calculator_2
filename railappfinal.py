@@ -129,6 +129,7 @@ for node in avoid_nodes:
         G.remove_node(node)
 
 # Compute and plot
+# --- Compute and plot ---
 if st.sidebar.button("Compute Paths"):
     if start_node and end_node:
         # --- Create working copy of graph ---
@@ -148,7 +149,7 @@ if st.sidebar.button("Compute Paths"):
                         edges_to_remove.append((u, v))
             G_temp.remove_edges_from(edges_to_remove)
 
-        # --- Compute base path on full graph (ignore avoided nodes) ---
+        # --- Compute base path (ignore avoided nodes for this one) ---
         try:
             base_path = nx.shortest_path(G_temp, start_node, end_node, weight="weight")
             base_distance = nx.shortest_path_length(G_temp, start_node, end_node, weight="weight")
@@ -208,6 +209,7 @@ if st.sidebar.button("Compute Paths"):
     else:
         st.warning("Please enter both start and end nodes.")
 
+
 # --- Always display last computed results if they exist ---
 if "results" in st.session_state:
     res = st.session_state["results"]
@@ -239,13 +241,7 @@ if "results" in st.session_state:
         else:
             st.markdown("No valid diversion path found.")
         st.markdown("</div>", unsafe_allow_html=True)
-    # --- Add a Clear Results button ---
-    st.markdown("---")
-    if st.button("🧹 Clear Results"):
-        for key in ["results", "map"]:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.experimental_rerun()
+
 # --- Display the map persistently ---
 if "map" in st.session_state:
     st_folium(st.session_state["map"], width=1200, height=700)
