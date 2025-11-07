@@ -154,7 +154,7 @@ with st.expander("Lookup Nodes by Filters"):
     # Optional filters (only shown if column exists)
     div_sel = None
     if "DIVISION" in edges.columns:
-        lookup_divs = sorted(nodes["DIVISION"].dropna().unique())
+        lookup_divs = sorted(edges["DIVISION"].dropna().unique())
         div_sel = st.selectbox("Division", ["All"] + lookup_divs)
 
     subdiv_sel = None
