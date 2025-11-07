@@ -153,9 +153,9 @@ with st.expander("Lookup Nodes by Filters"):
 
     # Optional filters (only shown if column exists)
     county_sel = None
-    if "COUNTY" in nodes.columns:
-        lookup_counties = sorted(nodes["COUNTY"].dropna().unique())
-        county_sel = st.selectbox("County", ["All"] + lookup_counties)
+    if "DIVISION" in nodes.columns:
+        lookup_divs = sorted(nodes["DIVISION"].dropna().unique())
+        county_sel = st.selectbox("Division", ["All"] + lookup_divs)
 
     subdiv_sel = None
     if "SUBDIV" in edges.columns:
