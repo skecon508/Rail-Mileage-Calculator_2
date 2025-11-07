@@ -108,7 +108,7 @@ def plot_paths(_G, base_path, diversion_path):
     """Plot base and diversion paths on a Folium map""" 
     
     if not base_path: st.error("No base path found.") 
-        return None 
+    return None 
 
 m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron") 
     def node_coords(node): 
