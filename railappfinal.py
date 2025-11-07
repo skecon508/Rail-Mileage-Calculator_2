@@ -142,6 +142,21 @@ st.sidebar.header("Path Configuration")
 start_node = st.sidebar.text_input("Start Node (6-digit ID)", value=st.session_state.get("start_node", ""))
 end_node = st.sidebar.text_input("End Node (6-digit ID)", value=st.session_state.get("end_node", ""))
 
+#FRA Links
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 📎 Reference Maps")
+
+st.sidebar.markdown(
+    "[FRA Nodes Map](https://geodata.bts.gov/datasets/54f40ddee0844fb285dafb13a6b2f623_0/explore?location=32.691740%2C-108.315141%2C3.98)",
+    unsafe_allow_html=True
+)
+
+st.sidebar.markdown(
+    "[FRA Edges (Rail Lines) Map](https://geodata.bts.gov/datasets/e143f436d4774402aa8cca1e663b1d24_0/explore?location=41.945498%2C-72.474621%2C9.00)",
+    unsafe_allow_html=True
+)
+
+st.sidebar.markdown("---")
 
 # --- Node Lookup Panel ---
 st.sidebar.markdown("### 🔍 Node Lookup")
