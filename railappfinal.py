@@ -152,10 +152,10 @@ with st.expander("Lookup Nodes by Filters"):
     state_sel = st.selectbox("State", ["All"] + lookup_states)
 
     # Optional filters (only shown if column exists)
-    county_sel = None
-    if "DIVISION" in nodes.columns:
+    div_sel = None
+    if "DIVISION" in edges.columns:
         lookup_divs = sorted(nodes["DIVISION"].dropna().unique())
-        county_sel = st.selectbox("Division", ["All"] + lookup_divs)
+        div_sel = st.selectbox("Division", ["All"] + lookup_divs)
 
     subdiv_sel = None
     if "SUBDIV" in edges.columns:
@@ -168,8 +168,8 @@ with st.expander("Lookup Nodes by Filters"):
     if state_sel != "All":
         filtered_nodes = filtered_nodes[filtered_nodes["STATE"] == state_sel]
 
-    if county_sel and county_sel != "All":
-        filtered_nodes = filtered_nodes[filtered_nodes["COUNTY"] == county_sel]
+    if div_sel and div_sel != "All":
+        filtered_nodes = filtered_nodes[filtered_nodes["DIVISION"] == div_sel]
 
     if subdiv_sel and subdiv_sel != "All":
         # Nodes must appear in edges with matching SUBDIV
