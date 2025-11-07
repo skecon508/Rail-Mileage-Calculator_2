@@ -104,31 +104,57 @@ G = create_or_load_graph(nodes, edges)
 #Collect the track rights owners together
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
 
-def plot_paths(_G, base_path, diversion_path):
-    """Plot base and diversion paths on a Folium map"""
+def plot_paths(G, base_path, diversion_path):
+    """Plot entire rail network in light gray, base path in blue, and diversion in red."""
     if not base_path:
         st.error("No base path found.")
         return None
 
+    # Centered map
     m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
 
+    # Helper to extract coordinates from G
     def node_coords(node):
         data = G.nodes.get(node, {})
         if "pos" in data:
             x, y = data["pos"]
-            return (y, x)  # folium wants (lat, lon)
+            return (y, x)  # (lat, lon)
         return None
 
-    # Base path (blue)
-    base_coords = [node_coords(n) for n in base_path if node_coords(n)]
-    folium.PolyLine(base_coords, color="blue", weight=2, tooltip="Base Path").add_to(m)
+    # 1) --- Plot the entire network in light gray ---
+    for u, v in G.edges():
+        u_c = node_coords(u)
+        v_c = node_coords(v)
+        if u_c and v_c:
+            folium.PolyLine(
+                [u_c, v_c],
+                color="#C0C0C0",    # Light gray
+                weight=1,
+                opacity=0.6,
+                tooltip=None
+            ).add_to(m)
 
-    # Diversion path (red)
+    # 2) --- Plot the base path in blue ---
+    base_coords = [node_coords(n) for n in base_path if node_coords(n)]
+    folium.PolyLine(
+        base_coords,
+        color="blue",
+        weight=4,
+        tooltip="Base Route"
+    ).add_to(m)
+
+    # 3) --- Plot the diversion path in red ---
     if diversion_path:
         div_coords = [node_coords(n) for n in diversion_path if node_coords(n)]
-        folium.PolyLine(div_coords, color="red", weight=2, tooltip="Diversion Path").add_to(m)
+        folium.PolyLine(
+            div_coords,
+            color="red",
+            weight=4,
+            tooltip="Diversion Route"
+        ).add_to(m)
 
     return m
+
 
 # --- Streamlit UI ---
 st.title("🚆 North American Rail Network Path Mapper")
