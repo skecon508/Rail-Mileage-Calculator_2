@@ -137,8 +137,59 @@ st.success(f"Loaded {len(edges)} edges and {len(nodes)} nodes.")
 
 # Sidebar controls
 st.sidebar.header("Path Configuration")
-start_node = st.sidebar.text_input("Start Node (6-digit ID)", "")
-end_node = st.sidebar.text_input("End Node (6-digit ID)", "")
+start_node = st.sidebar.text_input("Start Node (6-digit ID)", value=st.session_state.get("start_node", ""))
+end_node = st.sidebar.text_input("End Node (6-digit ID)", value=st.session_state.get("end_node", ""))
+
+
+# --- Node Lookup Panel ---
+st.sidebar.markdown("### 🔍 Node Lookup")
+with st.expander("Lookup Nodes by Filters"):
+
+    # Determine available filter columns
+    lookup_states = sorted(nodes["STATE"].dropna().unique())
+    state_sel = st.selectbox("State", ["All"] + lookup_states)
+
+    # Optional filters (only shown if column exists)
+    county_sel = None
+    if "COUNTY" in nodes.columns:
+        lookup_counties = sorted(nodes["COUNTY"].dropna().unique())
+        county_sel = st.selectbox("County", ["All"] + lookup_counties)
+
+    subdiv_sel = None
+    if "SUBDIV" in edges.columns:
+        lookup_subdivs = sorted(edges["SUBDIV"].dropna().unique())
+        subdiv_sel = st.selectbox("Subdivision", ["All"] + lookup_subdivs)
+
+    # Apply filters
+    filtered_nodes = nodes.copy()
+
+    if state_sel != "All":
+        filtered_nodes = filtered_nodes[filtered_nodes["STATE"] == state_sel]
+
+    if county_sel and county_sel != "All":
+        filtered_nodes = filtered_nodes[filtered_nodes["COUNTY"] == county_sel]
+
+    if subdiv_sel and subdiv_sel != "All":
+        # Nodes must appear in edges with matching SUBDIV
+        edge_nodes = edges.loc[edges["SUBDIV"] == subdiv_sel, ["FRFRANODE", "TOFRANODE"]]
+        valid_node_ids = set(edge_nodes["FRFRANODE"].astype(str)) | set(edge_nodes["TOFRANODE"].astype(str))
+        filtered_nodes = filtered_nodes[filtered_nodes["FRANODEID"].astype(str).isin(valid_node_ids)]
+
+    st.write(f"**Matches:** {len(filtered_nodes)}")
+    st.dataframe(filtered_nodes[["FRANODEID", "STATE", "x", "y"]], use_container_width=True)
+
+    # Allow user to copy a node into input
+    selected_node = st.selectbox("Select node to copy:", filtered_nodes["FRANODEID"].astype(str).tolist())
+
+    colA, colB = st.columns(2)
+    with colA:
+        if st.button("Copy to Start Node"):
+            st.session_state["start_node"] = selected_node
+    with colB:
+        if st.button("Copy to End Node"):
+            st.session_state["end_node"] = selected_node
+
+
 avoid_nodes_input = st.sidebar.text_input("Nodes to avoid (comma-separated 6-digit IDs)", "")
 avoid_nodes = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()]
 base_speed = st.sidebar.number_input("Base Speed (mph)")
