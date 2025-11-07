@@ -169,7 +169,7 @@ with st.expander("Lookup Nodes by Filters"):
         filtered_nodes = filtered_nodes[filtered_nodes["STATE"] == state_sel]
 
     if div_sel and div_sel != "All":
-        edge_nodes = edges.loc[edges["DIVISION"] == subdiv_sel, ["FRFRANODE", "TOFRANODE"]]
+        edge_nodes = edges.loc[edges["DIVISION"] == div_sel, ["FRFRANODE", "TOFRANODE"]]
         valid_node_ids = set(edge_nodes["FRFRANODE"].astype(str)) | set(edge_nodes["TOFRANODE"].astype(str))
         filtered_nodes = filtered_nodes[filtered_nodes["FRANODEID"].astype(str).isin(valid_node_ids)]
 
