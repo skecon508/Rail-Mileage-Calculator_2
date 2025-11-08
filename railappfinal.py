@@ -232,7 +232,8 @@ base_speed = st.sidebar.number_input("Base Speed (mph)")
 div_speed = st.sidebar.number_input("Diversion Speed (mph)")
 fuel_cost_per_mile =st.sidebar.number_input("Fuel Cost per Mile")
 labor_cost_per_mile=st.sidebar.number_input("Labor Cost per Mile")
-edges_to_remove =[]
+
+#edges_to_remove =[]
 
 # --- Allowed Owner Selection ---
 trk_cols = [f"TRKRGHTS{i}" for i in range(1, 10)]
