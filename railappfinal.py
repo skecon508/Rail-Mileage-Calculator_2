@@ -352,7 +352,7 @@ if st.sidebar.button("Compute Paths"):
             
             # If the user wants to see the full network, draw it first
             if show_network:
-                m = plot_full_network(G_temp)   # Use filtered graph version
+                m = plot_full_network(G)   # Use filtered graph version
             else:
                 m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
             
