@@ -105,7 +105,7 @@ G = create_or_load_graph(nodes, edges)
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
 
 #Define plotting function
-def plot_paths(_G, base_path, diversion_path): 
+def plot_paths(m,_G, base_path, diversion_path): 
     """Plot base and diversion paths on a Folium map""" 
     if not base_path: 
         st.error("No base path found.") 
@@ -131,6 +131,23 @@ def plot_paths(_G, base_path, diversion_path):
 
     return m
 
+# --- Plot underlying network ----
+def plot_full_network(G):
+    """Return a folium map with the full rail network drawn in light grey."""
+    m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
+
+    for u, v, data in G.edges(data=True):
+        u_pos = G.nodes[u].get("pos")
+        v_pos = G.nodes[v].get("pos")
+        if u_pos and v_pos:
+            (x1, y1) = u_pos
+            (x2, y2) = v_pos
+            folium.PolyLine([(y1, x1), (y2, x2)],
+                            color="#CCCCCC",
+                            weight=1,
+                            opacity=0.5).add_to(m)
+    return m
+
 
 # --- Streamlit UI ---
 st.title("🚆 North American Rail Network Path Mapper")
@@ -145,6 +162,15 @@ end_node = st.sidebar.text_input("End Node (6-digit ID)", value=st.session_state
 #FRA Links
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📎 Reference Maps")
+
+show_network = st.sidebar.checkbox("Show Full Network", value=True)
+if show_network:
+    m = plot_full_network(G)
+else:
+    m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
+
+m = plot_paths(m, G, base_path, diversion_path)
+st_folium(m, width=1200, height=700)
 
 st.sidebar.markdown(
     "[FRA Nodes Map](https://geodata.bts.gov/datasets/54f40ddee0844fb285dafb13a6b2f623_0/explore?location=32.691740%2C-108.315141%2C3.98)",
@@ -356,7 +382,9 @@ if st.sidebar.button("Compute Paths"):
 
             # --- Plot map using base/diversion paths we just computed ---
             # Use the global G only to look up node coordinates (pos attributes)
-            m = plot_paths(G, base_path, diversion_path)
+            m = plot_full_network(G)  # draw the rail system first
+            m = plot_paths(G, base_path, diversion_path)  # draw paths on top
+
             if m:
                 st.session_state["map"] = m
 
