@@ -163,15 +163,6 @@ end_node = st.sidebar.text_input("End Node (6-digit ID)", value=st.session_state
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📎 Reference Maps")
 
-show_network = st.sidebar.checkbox("Show Full Network", value=True)
-if show_network:
-    m = plot_full_network(G)
-else:
-    m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
-
-m = plot_paths(m, G, base_path, diversion_path)
-st_folium(m, width=1200, height=700)
-
 st.sidebar.markdown(
     "[FRA Nodes Map](https://geodata.bts.gov/datasets/54f40ddee0844fb285dafb13a6b2f623_0/explore?location=32.691740%2C-108.315141%2C3.98)",
     unsafe_allow_html=True
@@ -250,11 +241,6 @@ unique_owners = [o for o in unique_owners if isinstance(o, str) and o.strip()]
 unique_owners.sort()
 
 allowed_owner = st.sidebar.multiselect("Allowed Owner (Railroad)", ["All"] + unique_owners)
-    
-# Remove avoided nodes
-#for node in avoid_nodes:
-    #if node in G:
-        #G.remove_node(node)
 
 # Compute and plot
 # --- Compute and plot ---
@@ -361,6 +347,19 @@ if st.sidebar.button("Compute Paths"):
                 div_time = div_fuel = div_labor = 0
 
             # --- Build display results and store in session state ---
+            # --- Plot and store results ---
+            show_network = st.sidebar.checkbox("Show Full Network", value=True)
+            
+            # If the user wants to see the full network, draw it first
+            if show_network:
+                m = plot_full_network(G_temp)   # Use filtered graph version
+            else:
+                m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
+            
+            # Then overlay the actual calculated paths
+            m = plot_paths(m, G_temp, base_path, diversion_path)
+            
+            # Store in session_state so it stays visible after refresh
             st.session_state["results"] = {
                 "base": {
                     "distance": base_distance,
@@ -368,7 +367,6 @@ if st.sidebar.button("Compute Paths"):
                     "time": base_time,
                     "fuel": base_fuel,
                     "labor": base_labor,
-                    "path": base_path
                 },
                 "diversion": {
                     "distance": diversion_distance,
@@ -376,17 +374,10 @@ if st.sidebar.button("Compute Paths"):
                     "time": div_time,
                     "fuel": div_fuel,
                     "labor": div_labor,
-                    "path": diversion_path
-                },
+                }
             }
+            st.session_state["map"] = m
 
-            # --- Plot map using base/diversion paths we just computed ---
-            # Use the global G only to look up node coordinates (pos attributes)
-            m = plot_full_network(G)  # draw the rail system first
-            m = plot_paths(G, base_path, diversion_path)  # draw paths on top
-
-            if m:
-                st.session_state["map"] = m
 
         # Debug: show session keys (temporary - remove later)
         st.debug = getattr(st, "debug", None)
