@@ -265,12 +265,12 @@ if st.sidebar.button("Compute Paths"):
 
         if not show_network and allowed_owner != "All":
             allowed_edges = get_allowed_edges(edges, allowed_owner, trk_cols)
-                if allowed_edges:
-                    edges_to_remove = [
-                        (u, v) for u, v in G_temp.edges()
-                        if (str(u).strip(), str(v).strip()) not in allowed_edges
-                    ]
-                    G_temp.remove_edges_from(edges_to_remove)
+            if allowed_edges:
+                edges_to_remove = [
+                    (u, v) for u, v in G_temp.edges()
+                    if (str(u).strip(), str(v).strip()) not in allowed_edges
+                ]
+                G_temp.remove_edges_from(edges_to_remove)
 
         # --- Apply allowed owner filter (cached via get_allowed_edges) ---
         allowed_edges = get_allowed_edges(edges, allowed_owner, trk_cols)  # accepts list or "All"
