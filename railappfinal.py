@@ -471,13 +471,35 @@ if "results" in st.session_state and "map" in st.session_state and st.button("Ex
         }
         pd.DataFrame(summary_data).to_excel(writer, index=False, sheet_name="Summary")
 
-        # 2️⃣ Paths sheet
-        max_len = max(len(base_path or []), len(diversion_path or []))
-        df_paths = pd.DataFrame({
-            "Base Path Nodes": (base_path or []) + [""] * (max_len - len(base_path or [])),
-            "Diversion Path Nodes": (diversion_path or []) + [""] * (max_len - len(diversion_path or [])),
-        })
-        df_paths.to_excel(writer, index=False, sheet_name="Paths")
+        # --- Convert node list to dataframe with coordinates ---
+        def path_to_df(path, nodes_df):
+            if not path:
+                return pd.DataFrame(columns=["NodeID", "Latitude", "Longitude"])
+        
+            # Ensure string match
+            nodes_df = nodes_df.copy()
+            nodes_df["FRANODEID"] = nodes_df["FRANODEID"].astype(str).str.strip()
+        
+            rows = []
+            for node in path:
+                row = nodes_df[nodes_df["FRANODEID"] == str(node)]
+                if not row.empty:
+                    lat, lon = row.iloc[0]["y"], row.iloc[0]["x"]
+                    rows.append([node, lat, lon])
+                else:
+                    rows.append([node, None, None])
+        
+            return pd.DataFrame(rows, columns=["NodeID", "Latitude", "Longitude"])
+        
+        
+        # Create one sheet per path
+        base_df = path_to_df(base_path, nodes)
+        base_df.to_excel(writer, index=False, sheet_name="Base_Path")
+        
+        if diversion_path:
+            diversion_df = path_to_df(diversion_path, nodes)
+            diversion_df.to_excel(writer, index=False, sheet_name="Diversion_Path")
+
 
         # 3️⃣ Optional — Map image
         try:
