@@ -105,31 +105,41 @@ G = create_or_load_graph(nodes, edges)
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
 
 #Define plotting function
-def plot_paths(m,_G, base_path, diversion_path): 
-    """Plot base and diversion paths on a Folium map""" 
-    if not base_path: 
-        st.error("No base path found.") 
-        return None 
+def plot_paths(G_in, base_path, diversion_path, show_network=False):
+    """Plot base + diversion paths on a Folium map, optionally showing full network."""
+    if not base_path:
+        st.error("No base path found.")
+        return None
 
-    m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron") 
+    m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
 
-    def node_coords(node): 
-        data = G.nodes.get(node, {}) 
-        if "pos" in data: 
-            x, y = data["pos"] 
-            return (y, x) 
-        # folium wants (lat, lon) 
-            return None 
-# Base path (blue) 
-    base_coords = [node_coords(n) for n in base_path if node_coords(n)] 
-    folium.PolyLine(base_coords, color="blue", weight=2, tooltip="Base Path").add_to(m) 
-# Diversion path (red) 
+    # Helper to extract coordinates
+    def node_coords(node):
+        data = G_in.nodes.get(node, {})
+        if "pos" in data:
+            x, y = data["pos"]
+            return (y, x)  # lat, lon
+        return None
 
-    if diversion_path: 
-        div_coords = [node_coords(n) for n in diversion_path if node_coords(n)] 
-        folium.PolyLine(div_coords, color="red", weight=2, tooltip="Diversion Path").add_to(m) 
+    # Optional: Light-grey background network
+    if show_network:
+        for u, v in G_in.edges():
+            p1 = node_coords(u)
+            p2 = node_coords(v)
+            if p1 and p2:
+                folium.PolyLine([p1, p2], color="#C4C4C4", weight=1, opacity=0.7).add_to(m)
+
+    # Base path (blue)
+    base_coords = [node_coords(n) for n in base_path if node_coords(n)]
+    folium.PolyLine(base_coords, color="blue", weight=4, tooltip="Base Path").add_to(m)
+
+    # Diversion path (red)
+    if diversion_path:
+        div_coords = [node_coords(n) for n in diversion_path if node_coords(n)]
+        folium.PolyLine(div_coords, color="red", weight=4, tooltip="Diversion Path").add_to(m)
 
     return m
+
 
 # --- Plot underlying network ----
 def plot_full_network(G):
@@ -252,6 +262,16 @@ if st.sidebar.button("Compute Paths"):
         # --- Create working copy of graph (preserve cached G) ---
         G_temp = G.copy()
 
+
+        if not show_network and allowed_owner != "All":
+        allowed_edges = get_allowed_edges(edges, allowed_owner, trk_cols)
+            if allowed_edges:
+                edges_to_remove = [
+                    (u, v) for u, v in G_temp.edges()
+                    if (str(u).strip(), str(v).strip()) not in allowed_edges
+                ]
+                G_temp.remove_edges_from(edges_to_remove)
+
         # --- Apply allowed owner filter (cached via get_allowed_edges) ---
         allowed_edges = get_allowed_edges(edges, allowed_owner, trk_cols)  # accepts list or "All"
         if allowed_edges is not None:
@@ -358,7 +378,7 @@ if st.sidebar.button("Compute Paths"):
                 m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
             
             # Then overlay the actual calculated paths
-            m = plot_paths(m, G_temp, base_path, diversion_path)
+            m = plot_paths(G_temp, base_path, diversion_path, show_network)
             
             # Store in session_state so it stays visible after refresh
             st.session_state["results"] = {
