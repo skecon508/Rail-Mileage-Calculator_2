@@ -162,7 +162,7 @@ end_node = st.sidebar.text_input("End Node (6-digit ID)", value=st.session_state
 #FRA Links
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📎 Reference Maps")
-
+show_network = st.sidebar.checkbox("Show Full Network", value=True)
 st.sidebar.markdown(
     "[FRA Nodes Map](https://geodata.bts.gov/datasets/54f40ddee0844fb285dafb13a6b2f623_0/explore?location=32.691740%2C-108.315141%2C3.98)",
     unsafe_allow_html=True
@@ -349,7 +349,7 @@ if st.sidebar.button("Compute Paths"):
 
             # --- Build display results and store in session state ---
             # --- Plot and store results ---
-            show_network = st.sidebar.checkbox("Show Full Network", value=True)
+            
             
             # If the user wants to see the full network, draw it first
             if show_network:
