@@ -122,12 +122,11 @@ def plot_paths(G_in, base_path, diversion_path, show_network=False):
         return None
 
     # Optional: Light-grey background network
-    if show_network:
-        for u, v in G_in.edges():
-            p1 = node_coords(u)
-            p2 = node_coords(v)
-            if p1 and p2:
-                folium.PolyLine([p1, p2], color="#C4C4C4", weight=1, opacity=0.7).add_to(m)
+    for u, v in G_in.edges():
+        (y1, x1) = G_in.nodes[u]["pos"][1], G_in.nodes[u]["pos"][0]
+        (y2, x2) = G_in.nodes[v]["pos"][1], G_in.nodes[v]["pos"][0]
+        folium.PolyLine([(y1, x1), (y2, x2)], color="#999999", weight=1, opacity=0.6).add_to(m)
+
 
     # Base path (blue)
     base_coords = [node_coords(n) for n in base_path if node_coords(n)]
