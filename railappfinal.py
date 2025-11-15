@@ -342,34 +342,34 @@ if st.sidebar.button("Compute Paths"):
             diversion_path = diversion_distance = None
 
         # --- Validate speeds before cost/time calculations ---
-        if base_path and (base_speed is None or base_speed <= 0):
-            st.error("Please enter a positive Base Speed (mph) to compute times/costs.")
-        elif avoid_nodes and (diversion_distance is not None) and (div_speed is None or div_speed <= 0):
-            st.error("Please enter a positive Diversion Speed (mph) to compute diversion times/costs.")
-        else:
+        #if base_path and (base_speed is None or base_speed <= 0):
+         #   st.error("Please enter a positive Base Speed (mph) to compute times/costs.")
+        #elif avoid_nodes and (diversion_distance is not None) and (div_speed is None or div_speed <= 0):
+        #    st.error("Please enter a positive Diversion Speed (mph) to compute diversion times/costs.")
+        #else:
             # --- Build display results and store in session state ---
             # --- Plot and store results ---
             
             
-            # If the user wants to see the full network, draw it first
-            if show_network:
-                m = plot_full_network(G)   # Use filtered graph version
-            else:
-                m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
+        # If the user wants to see the full network, draw it first
+        if show_network:
+            m = plot_full_network(G)   # Use filtered graph version
+        else:
+            m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
             
-            # Then overlay the actual calculated paths
-            m = plot_paths(G_temp, base_path, diversion_path, show_network)
+        # Then overlay the actual calculated paths
+        m = plot_paths(G_temp, base_path, diversion_path, show_network)
             
             # Store in session_state so it stays visible after refresh
-            st.session_state["results"] = {
-                "base": {
-                    "distance": base_distance,
+        st.session_state["results"] = {
+            "base": {
+                "distance": base_distance,
                 },
-                "diversion": {
-                    "distance": diversion_distance,
+            "diversion": {
+                "distance": diversion_distance,
                 }
             }
-            st.session_state["map"] = m
+        st.session_state["map"] = m
 
 
         # Debug: show session keys (temporary - remove later)
