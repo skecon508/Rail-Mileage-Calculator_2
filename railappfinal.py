@@ -88,21 +88,31 @@ def create_or_load_graph(nodes, edges):
         G.add_node(str(row["FRANODEID"]), state=row.get("STATE", ""), pos=(row["x"], row["y"]))
 
     for _, row in edges.iterrows():
-        fr = str(row["FRFRANODE"]).strip()
-        to = str(row["TOFRANODE"]).strip()
-
-        # Extract ownership + trackage rights
-        owners = [str(row[c]).strip() for c in owner_cols if str(row[c]).strip() not in ["", "nan"]]
-        rights = [str(row[c]).strip() for c in trk_cols   if str(row[c]).strip() not in ["", "nan"]]
-
-        allowed = sorted(set(owners + rights))  # unified list
-
+    
+        # --- collect trackage rights columns ---
+        trk_values = []
+        for c in edges.columns:
+            if c.upper().startswith("TRKRGHTS"):
+                val = row.get(c, "")
+                trk_values.append("" if pd.isna(val) else str(val).strip())
+    
+        # --- collect RR owner column ---
+        rr_owner = ""
+        for col in ["RROWNER", "OWNER", "RR_OWNER", "RAILROAD"]:
+            if col in edges.columns:
+                rr_owner = row.get(col, "")
+                rr_owner = "" if pd.isna(rr_owner) else str(rr_owner).strip()
+                break
+    
+        # --- add edge ---
         G.add_edge(
-            fr,
-            to,
+            str(row["FRFRANODE"]).strip(),
+            str(row["TOFRANODE"]).strip(),
             weight=row.get("MILES", 1),
-            allowed_owners=allowed
+            trk_rights=trk_values,
+            rr_owner=rr_owner
         )
+
     # ✅ Save prebuilt graph for faster future loads
    
     with open(GRAPH_PATH, "wb") as f:
