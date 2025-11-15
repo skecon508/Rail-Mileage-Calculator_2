@@ -223,7 +223,7 @@ with st.expander("Lookup Nodes by Filters"):
         filtered_nodes = filtered_nodes[filtered_nodes["FRANODEID"].astype(str).isin(valid_node_ids)]
 
     st.write(f"**Matches:** {len(filtered_nodes)}")
-    st.dataframe(filtered_nodes[["FRANODEID", "STATE", "x", "y"]], use_container_width=True)
+    st.dataframe(filtered_nodes[["FRANODEID", "STATE", "x", "y"]], width=True)
 
     # Allow user to copy a node into input
     selected_node = st.selectbox("Select node to copy:", filtered_nodes["FRANODEID"].astype(str).tolist())
