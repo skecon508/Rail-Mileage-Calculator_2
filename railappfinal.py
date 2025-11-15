@@ -183,7 +183,7 @@ st.sidebar.markdown(
 
 st.sidebar.markdown("---")
 
-#show_network = st.sidebar.checkbox("Show Full Network", value=True)
+show_network = st.sidebar.checkbox("Show Full Network", value=True)
 
 # --- Node Lookup Panel ---
 st.sidebar.markdown("### 🔍 Node Lookup")
