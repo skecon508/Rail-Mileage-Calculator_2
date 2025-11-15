@@ -235,13 +235,8 @@ with st.expander("Lookup Nodes by Filters"):
         if st.button("Copy to End Node"):
             st.session_state["end_node"] = selected_node
 
-
 avoid_nodes_input = st.sidebar.text_input("Nodes to avoid (comma-separated 6-digit IDs)", "")
 avoid_nodes = [n.strip() for n in avoid_nodes_input.split(",") if n.strip()]
-base_speed = st.sidebar.number_input("Base Speed (mph)")
-div_speed = st.sidebar.number_input("Diversion Speed (mph)")
-fuel_cost_per_mile =st.sidebar.number_input("Fuel Cost per Mile")
-labor_cost_per_mile=st.sidebar.number_input("Labor Cost per Mile")
 
 #edges_to_remove =[]
 
@@ -352,21 +347,6 @@ if st.sidebar.button("Compute Paths"):
         elif avoid_nodes and (diversion_distance is not None) and (div_speed is None or div_speed <= 0):
             st.error("Please enter a positive Diversion Speed (mph) to compute diversion times/costs.")
         else:
-            # --- Compute costs & times (if values exist) ---
-            if base_path:
-                base_time = base_distance / base_speed
-                base_fuel = base_distance * fuel_cost_per_mile
-                base_labor = base_distance * labor_cost_per_mile
-            else:
-                base_time = base_fuel = base_labor = 0
-
-            if diversion_distance:
-                div_time = diversion_distance / div_speed
-                div_fuel = diversion_distance * fuel_cost_per_mile
-                div_labor = diversion_distance * labor_cost_per_mile
-            else:
-                div_time = div_fuel = div_labor = 0
-
             # --- Build display results and store in session state ---
             # --- Plot and store results ---
             
@@ -384,17 +364,9 @@ if st.sidebar.button("Compute Paths"):
             st.session_state["results"] = {
                 "base": {
                     "distance": base_distance,
-                    "speed": base_speed,
-                    "time": base_time,
-                    "fuel": base_fuel,
-                    "labor": base_labor,
                 },
                 "diversion": {
                     "distance": diversion_distance,
-                    "speed": div_speed,
-                    "time": div_time,
-                    "fuel": div_fuel,
-                    "labor": div_labor,
                 }
             }
             st.session_state["map"] = m
@@ -426,10 +398,6 @@ if "results" in st.session_state:
         <h4 style="text-align:center;">Base Path</h4>
         """, unsafe_allow_html=True)
         st.markdown(f"**Distance:** {res['base']['distance']:.2f} miles")
-        st.markdown(f"**Avg Speed:** {res['base']['speed']:.1f} mph")
-        st.markdown(f"**Travel Time:** {res['base']['time']:.2f} hours")
-        st.markdown(f"**Fuel Cost:** ${res['base']['fuel']:,.2f}")
-        st.markdown(f"**Labor Cost:** ${res['base']['labor']:,.2f}")
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
@@ -439,10 +407,6 @@ if "results" in st.session_state:
         """, unsafe_allow_html=True)
         if res["diversion"]["distance"]:
             st.markdown(f"**Distance:** {res['diversion']['distance']:.2f} miles")
-            st.markdown(f"**Avg Speed:** {res['diversion']['speed']:.1f} mph")
-            st.markdown(f"**Travel Time:** {res['diversion']['time']:.2f} hours")
-            st.markdown(f"**Fuel Cost:** ${res['diversion']['fuel']:,.2f}")
-            st.markdown(f"**Labor Cost:** ${res['diversion']['labor']:,.2f}")
         else:
             st.markdown("No valid diversion path found.")
         st.markdown("</div>", unsafe_allow_html=True)
