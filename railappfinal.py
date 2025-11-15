@@ -27,20 +27,23 @@ def get_allowed_edges(edges, allowed_owners, trk_cols):
     # If "All" selected, skip filtering
     if "All" in allowed_owners or not allowed_owners:
         return None
-
     allowed_owners = [str(o).strip() for o in allowed_owners]
-
     edges = edges.copy()
     edges["FR_str"] = edges["FRFRANODE"].astype(str).str.strip()
     edges["TO_str"] = edges["TOFRANODE"].astype(str).str.strip()
+    owner_cols = [c for c in edges.columns if "OWNER" in c.upper()]
 
-    for c in trk_cols:
+    # Clean TRK and OWNER columns
+    for c in trk_cols + owner_cols:
         edges[c] = edges[c].fillna("").astype(str).str.strip()
-
-    # Row is allowed if ANY trackage rights col matches ANY selected owner
-    mask = edges[trk_cols].apply(lambda row: any(x in allowed_owners for x in row), axis=1)
+        
+    # --- UPDATED MASK: allowed if ANY TRK or ANY OWNER column matches ---
+    mask = edges.apply(
+        lambda row: any(x in allowed_owners for x in row[trk_cols]) or 
+                    any(x in allowed_owners for x in row[owner_cols]),
+        axis=1
+    )
     subset = edges[mask]
-
     allowed_edges = set()
     for _, r in subset.iterrows():
         u, v = r["FR_str"], r["TO_str"]
