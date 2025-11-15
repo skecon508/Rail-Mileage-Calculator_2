@@ -48,8 +48,7 @@ def get_allowed_edges(edges, allowed_owners, trk_cols):
         allowed_edges.add((v, u))  # undirected edges
 
     return allowed_edges
-
-    
+ 
 # Define data paths
 @st.cache_data 
 def load_data(): 
@@ -60,7 +59,6 @@ def load_data():
     edges = pd.read_csv(EDGES_PATH, compression='gzip') 
     nodes = pd.read_csv(NODES_PATH, compression='gzip') 
     return nodes, edges
-
 
 @st.cache_resource
 def create_or_load_graph(nodes, edges):
@@ -77,25 +75,37 @@ def create_or_load_graph(nodes, edges):
 
     # ✅ Otherwise, build it from CSVs and save
     st.warning("Graph not found on disk — building new graph (this may take a few minutes)...")
+    
+    #Collect ownership and trackage rights columns
+    owner_cols = [c for c in edges.columns if c.upper().startswith("RROWNER")]
+    trk_cols   = [c for c in edges.columns if c.upper().startswith("TRKRGHTS")]
+    
     G = nx.Graph()
     for _, row in nodes.iterrows():
         G.add_node(str(row["FRANODEID"]), state=row.get("STATE", ""), pos=(row["x"], row["y"]))
 
     for _, row in edges.iterrows():
-        ownership = row.get("TRKRGHTS1")
-        if pd.isna(ownership):
-            ownership = ""
-        else:
-            ownership = str(ownership).strip()
-        G.add_edge(str(row["FRFRANODE"]), str(row["TOFRANODE"]), weight=row.get("MILES", 1), ownership=ownership)
+        fr = str(row["FRFRANODE"]).strip()
+        to = str(row["TOFRANODE"]).strip()
 
+        # Extract ownership + trackage rights
+        owners = [str(row[c]).strip() for c in owner_cols if str(row[c]).strip() not in ["", "nan"]]
+        rights = [str(row[c]).strip() for c in trk_cols   if str(row[c]).strip() not in ["", "nan"]]
+
+        allowed = sorted(set(owners + rights))  # unified list
+
+        G.add_edge(
+            fr,
+            to,
+            weight=row.get("MILES", 1),
+            allowed_owners=allowed
+        )
     # ✅ Save prebuilt graph for faster future loads
    
     with open(GRAPH_PATH, "wb") as f:
         pickle.dump(G, f, protocol=pickle.HIGHEST_PROTOCOL)
     st.success(f"Graph cached at {GRAPH_PATH}")
     return G
-
 
 # --- Load data and graph ---
 nodes, edges = load_data()
@@ -105,8 +115,8 @@ G = create_or_load_graph(nodes, edges)
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
 
 #Define plotting function
-def plot_paths(G_in, base_path, diversion_path, show_network=False):
-    """Plot base + diversion paths on a Folium map, optionally showing full network."""
+def plot_paths(G_in, base_path, diversion_path):
+    """Plot base + diversion paths on a Folium map."""
     if not base_path:
         st.error("No base path found.")
         return None
@@ -120,14 +130,7 @@ def plot_paths(G_in, base_path, diversion_path, show_network=False):
             x, y = data["pos"]
             return (y, x)  # lat, lon
         return None
-
-    # Optional: Light-grey background network
-    for u, v in G_in.edges():
-        (y1, x1) = G_in.nodes[u]["pos"][1], G_in.nodes[u]["pos"][0]
-        (y2, x2) = G_in.nodes[v]["pos"][1], G_in.nodes[v]["pos"][0]
-        folium.PolyLine([(y1, x1), (y2, x2)], color="#999999", weight=1, opacity=0.6).add_to(m)
-
-
+        
     # Base path (blue)
     base_coords = [node_coords(n) for n in base_path if node_coords(n)]
     folium.PolyLine(base_coords, color="blue", weight=4, tooltip="Base Path").add_to(m)
@@ -140,22 +143,7 @@ def plot_paths(G_in, base_path, diversion_path, show_network=False):
     return m
 
 
-# --- Plot underlying network ----
-def plot_full_network(G):
-    """Return a folium map with the full rail network drawn in light grey."""
-    m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
 
-    for u, v, data in G.edges(data=True):
-        u_pos = G.nodes[u].get("pos")
-        v_pos = G.nodes[v].get("pos")
-        if u_pos and v_pos:
-            (x1, y1) = u_pos
-            (x2, y2) = v_pos
-            folium.PolyLine([(y1, x1), (y2, x2)],
-                            color="#CCCCCC",
-                            weight=1,
-                            opacity=0.5).add_to(m)
-    return m
 
 
 # --- Streamlit UI ---
@@ -349,16 +337,10 @@ if st.sidebar.button("Compute Paths"):
         #else:
             # --- Build display results and store in session state ---
             # --- Plot and store results ---
-            
-            
-        # If the user wants to see the full network, draw it first
-        if show_network:
-            m = plot_full_network(G)   # Use filtered graph version
-        else:
-            m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
+        m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
             
         # Then overlay the actual calculated paths
-        m = plot_paths(G_temp, base_path, diversion_path, show_network)
+        m = plot_paths(G_temp, base_path, diversion_path)
             
             # Store in session_state so it stays visible after refresh
         st.session_state["results"] = {
