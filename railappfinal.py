@@ -431,23 +431,7 @@ if "results" in st.session_state and "map" in st.session_state and st.button("Ex
             "Distance (miles)": [
                 res["base"]["distance"],
                 res["diversion"]["distance"],
-            ],
-            "Average Speed (mph)": [
-                res["base"]["speed"],
-                res["diversion"]["speed"],
-            ],
-            "Travel Time (hours)": [
-                res["base"]["time"],
-                res["diversion"]["time"],
-            ],
-            "Fuel Cost ($)": [
-                res["base"]["fuel"],
-                res["diversion"]["fuel"],
-            ],
-            "Labor Cost ($)": [
-                res["base"]["labor"],
-                res["diversion"]["labor"],
-            ],
+            ]
         }
         pd.DataFrame(summary_data).to_excel(writer, index=False, sheet_name="Summary")
 
