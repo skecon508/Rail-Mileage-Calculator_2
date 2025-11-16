@@ -168,6 +168,7 @@ st.success(f"Loaded {len(edges)} edges and {len(nodes)} nodes.")
 st.sidebar.header("Path Configuration")
 start_node = st.sidebar.text_input("Start Node (6-digit ID)", value=st.session_state.get("start_node", ""))
 end_node = st.sidebar.text_input("End Node (6-digit ID)", value=st.session_state.get("end_node", ""))
+st.sidebar.markdown("Nodes are a 6 digit number between 300,000-500,000 for nodes in the continental US. Nodes in the 600,000 range are in Canada, and nodes in the 900,000 range are in Mexico")
 
 #FRA Links
 st.sidebar.markdown("---")
