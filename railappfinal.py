@@ -19,6 +19,8 @@ from openpyxl import Workbook
 #from openpyxl.drawing.image import Image as XLImage
 #import wkhtmltopdf
 
+ORS_API_KEY = st.secrets.get("ORS_API_KEY", "")
+
 st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 
 @st.cache_resource
@@ -51,7 +53,7 @@ def get_allowed_edges(edges, allowed_owners, trk_cols):
         allowed_edges.add((v, u))  # undirected edges
 
     return allowed_edges
- 
+
 # Define data paths
 @st.cache_data 
 def load_data(): 
@@ -120,6 +122,56 @@ def create_or_load_graph(nodes, edges):
     st.success(f"Graph cached at {GRAPH_PATH}")
     return G
 
+import openrouteservice
+from openrouteservice import convert
+
+#Use OpenStreetMap to obtain driving route
+def get_ors_driving_route(start_node, end_node, nodes_df, api_key=ORS_API_KEY):
+    """Return driving route distance, duration, and polyline coords using ORS."""
+
+    if not api_key:
+        st.error("OpenRouteService API key missing. Add ORS_API_KEY to Streamlit Secrets.")
+        return None, None, None
+
+    client = openrouteservice.Client(key=api_key)
+
+    # --- Extract coordinates ---
+    try:
+        srow = nodes_df.loc[nodes_df["FRANODEID"].astype(str) == str(start_node)].iloc[0]
+        erow = nodes_df.loc[nodes_df["FRANODEID"].astype(str) == str(end_node)].iloc[0]
+    except Exception:
+        st.error("Invalid node ID for ORS lookup.")
+        return None, None, None
+
+    start_coords = (srow["x"], srow["y"])  # lon, lat
+    end_coords = (erow["x"], erow["y"])    # lon, lat
+
+    try:
+        route = client.directions(
+            coordinates=[start_coords, end_coords],
+            profile="driving-car",
+            format="geojson"
+        )
+    except Exception as e:
+        st.error(f"ORS route request failed: {e}")
+        return None, None, None
+
+    # --- Parse results ---
+    feature = route["features"][0]
+    props = feature["properties"]
+    geom = feature["geometry"]
+
+    distance_miles = props["summary"]["distance"] / 1609.34
+    duration_hours = props["summary"]["duration"] / 3600.0
+
+    # ORS returns coordinates as [lon, lat]
+    coords = [(lat, lon) for lon, lat in geom["coordinates"]]
+
+    return distance_miles, duration_hours, coords
+
+
+
+
 # --- Load data and graph ---
 nodes, edges = load_data()
 G = create_or_load_graph(nodes, edges)
@@ -152,7 +204,14 @@ def plot_paths(G_in, base_path, diversion_path):
     if diversion_path:
         div_coords = [node_coords(n) for n in diversion_path if node_coords(n)]
         folium.PolyLine(div_coords, color="red", weight=4, tooltip="Diversion Path").add_to(m)
-
+    # Driving Route (yellow)
+    if driving_coords:
+        folium.PolyLine(
+            driving_coords,
+            color="yellow",
+            weight=3,
+            tooltip="Driving Route"
+        ).add_to(m)
     return m
 
 
@@ -302,6 +361,21 @@ if st.sidebar.button("Compute Paths"):
         except Exception as e:
             st.error(f"Unexpected error computing base path: {e}")
             base_path = base_distance = None
+        
+        # --- ORS Driving Route ---
+        drive_dist = drive_time = None
+        driving_coords = None
+        
+        drive_dist, drive_time, driving_coords = get_ors_driving_route(
+            start_node, end_node, nodes
+        )
+        
+        # Store
+        st.session_state["driving"] = {
+            "distance": drive_dist,
+            "time": drive_time,
+            "coords": driving_coords,
+        }
 
         # --- Compute diversion path ONLY if user provided avoid nodes ---
         diversion_path = None
@@ -354,7 +428,9 @@ if st.sidebar.button("Compute Paths"):
         m = folium.Map(location=[45, -95], zoom_start=5, tiles="CartoDB positron")
             
         # Then overlay the actual calculated paths
-        m = plot_paths(G_temp, base_path, diversion_path)
+        driving_coords = st.session_state["driving"]["coords"]
+        m = plot_paths(G, base_path, diversion_path, driving_coords=driving_coords)
+
             
             # Store in session_state so it stays visible after refresh
         st.session_state["results"] = {
