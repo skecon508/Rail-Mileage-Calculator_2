@@ -372,7 +372,7 @@ if st.sidebar.button("Compute Paths"):
         
         # Store
         st.session_state["driving"] = {
-            "drive distance": drive_dist,
+            "drivedistance": drive_dist,
             "time": drive_time,
             "coords": driving_coords,
         }
@@ -436,7 +436,7 @@ if st.sidebar.button("Compute Paths"):
         st.session_state["results"] = {
             "base": {
                 "distance": base_distance,
-                "drive distance": drive_dist
+                "drivedistance": drive_dist
                 },
             "diversion": {
                 "distance": diversion_distance,
@@ -470,8 +470,8 @@ if "results" in st.session_state:
         <div style="border:1px solid black; border-radius:8px; padding:10px;">
         <h4 style="text-align:center;">Base Path</h4>
         """, unsafe_allow_html=True)
-        st.markdown(f"**Distance:** {res['base']['distance']:.2f} miles")
-        st.markdown(f"**Driving Distance:** {res['base']['drive distance']:.2f} miles")
+        st.markdown(f"**Rail Distance:** {res['base']['distance']:.2f} miles")
+        st.markdown(f"**Driving Distance:** {res['base']['drivedistance']:.2f} miles")
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
