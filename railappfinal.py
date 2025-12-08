@@ -180,7 +180,7 @@ G = create_or_load_graph(nodes, edges)
 owner_col = [c for c in edges.columns if "TRK" in c.upper() or "RGHTS" in c.upper()]
 
 #Define plotting function
-def plot_paths(G_in, base_path, diversion_path):
+def plot_paths(G_in, base_path, diversion_path, driving_coords=None):
     """Plot base + diversion paths on a Folium map."""
     if not base_path:
         st.error("No base path found.")
