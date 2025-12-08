@@ -149,7 +149,7 @@ def get_ors_driving_route(start_node, end_node, nodes_df, api_key=ORS_API_KEY):
     try:
         route = client.directions(
             coordinates=[start_coords, end_coords],
-            profile="driving-car",
+            profile="driving-hgv",
             format="geojson"
         )
     except Exception as e:
