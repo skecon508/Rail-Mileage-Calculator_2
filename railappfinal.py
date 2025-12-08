@@ -19,7 +19,7 @@ from openpyxl import Workbook
 #from openpyxl.drawing.image import Image as XLImage
 #import wkhtmltopdf
 
-ORS_API_KEY = st.secrets[api_keys]["ORS_API_KEY"]
+ORS_API_KEY = st.secrets["api_keys"]["ORS_API_KEY"]
 
 st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 
