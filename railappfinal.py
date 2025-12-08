@@ -471,7 +471,7 @@ if "results" in st.session_state:
         <h4 style="text-align:center;">Base Path</h4>
         """, unsafe_allow_html=True)
         st.markdown(f"**Distance:** {res['base']['distance']:.2f} miles")
-        st.markdown(f"**Driving Distance:** {res['base']['drive_dist']:.2f} miles")
+        st.markdown(f"**Driving Distance:** {res['base']['drive distance']:.2f} miles")
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
