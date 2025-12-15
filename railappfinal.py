@@ -204,11 +204,11 @@ def plot_paths(G_in, base_path, diversion_path, driving_coords=None):
     if diversion_path:
         div_coords = [node_coords(n) for n in diversion_path if node_coords(n)]
         folium.PolyLine(div_coords, color="red", weight=4, tooltip="Diversion Path").add_to(m)
-    # Driving Route (yellow)
+    # Driving Route (green)
     if driving_coords:
         folium.PolyLine(
             driving_coords,
-            color="yellow",
+            color="green",
             weight=3,
             tooltip="Driving Route"
         ).add_to(m)
