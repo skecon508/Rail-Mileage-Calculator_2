@@ -85,9 +85,9 @@ def create_or_load_graph(nodes, edges):
     st.warning("Graph not found on disk — building new graph (this may take a few minutes)...")
 
     #Remove abandoned rail lines from dataset
-    #
     abdnlist = ["Out of service line", "Abandoned rail line", "Trail on former rail right-of-way", "Abandoned line that has been physicaly removed"]
-    edges = edges[~edges.NET.isin(abdnlist)]
+    #edges = edges[~edges.NET.isin(abdnlist)]
+    edges = edges[edges.NET.isin(abdnlist) == False]
     
     #Collect ownership and trackage rights columns
     owner_cols = [c for c in edges.columns if c.upper().startswith("RROWNER")]
