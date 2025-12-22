@@ -26,8 +26,7 @@ st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 @st.cache_resource
 def get_allowed_edges(edges, allowed_owners, trk_cols):
     """Return set of allowed edges for one or more selected owners."""
-    #Remove abandoned rail lines from dataset
-    #"Out of service line", "Abandoned rail line", "Trail on former rail right-of-way", "Abandoned line that has been physicaly removed"
+    
     
     
     # If "All" selected, skip filtering
@@ -84,6 +83,11 @@ def create_or_load_graph(nodes, edges):
 
     # Otherwise, build it from CSVs and save
     st.warning("Graph not found on disk — building new graph (this may take a few minutes)...")
+
+    #Remove abandoned rail lines from dataset
+    #
+    abdnlist = ["Out of service line", "Abandoned rail line", "Trail on former rail right-of-way", "Abandoned line that has been physicaly removed"]
+    edges = edges[~edges.NET.isin(abdnlist)]
     
     #Collect ownership and trackage rights columns
     owner_cols = [c for c in edges.columns if c.upper().startswith("RROWNER")]
