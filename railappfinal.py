@@ -26,6 +26,10 @@ st.set_page_config(page_title="Rail Network Path Mapper", layout="wide")
 @st.cache_resource
 def get_allowed_edges(edges, allowed_owners, trk_cols):
     """Return set of allowed edges for one or more selected owners."""
+    #Remove abandoned rail lines from dataset
+    #"Out of service line", "Abandoned rail line", "Trail on former rail right-of-way", "Abandoned line that has been physicaly removed"
+    
+    
     # If "All" selected, skip filtering
     if "All" in allowed_owners or not allowed_owners:
         return None
@@ -71,14 +75,14 @@ def create_or_load_graph(nodes, edges):
     DATA_DIR = pathlib.Path(__file__).parent / "data"
     GRAPH_PATH = DATA_DIR / "graph.gpickle"
 
-    # ✅ If the graph already exists, load it directly
+    # If the graph already exists, load it directly
     if GRAPH_PATH.exists():
         #st.info("Loading cached graph from disk...")
         with open(GRAPH_PATH, "rb") as f:
             G = pickle.load(f)
         return G
 
-    # ✅ Otherwise, build it from CSVs and save
+    # Otherwise, build it from CSVs and save
     st.warning("Graph not found on disk — building new graph (this may take a few minutes)...")
     
     #Collect ownership and trackage rights columns
