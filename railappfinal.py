@@ -85,7 +85,7 @@ def create_or_load_graph(nodes, edges):
     st.warning("Graph not found on disk — building new graph (this may take a few minutes)...")
 
     #Remove abandoned rail lines from dataset
-    abdnlist = ["Out of service line", "Abandoned rail line", "Trail on former rail right-of-way", "Abandoned line that has been physicaly removed"]
+    abdnlist = ["A", "R", "T", "X"]
     #edges = edges[~edges.NET.isin(abdnlist)]
     edges = edges[edges.NET.isin(abdnlist) == False]
     
